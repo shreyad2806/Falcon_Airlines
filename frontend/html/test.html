@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Airline Management System - Test Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .pass {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .fail {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 Airline Management System - Test Suite</h1>
+        <p>This page will test all functionality of your airline management system.</p>
+        
+        <div class="test-section">
+            <h2>📋 Test Results</h2>
+            <div id="testResults"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🔧 Manual Tests</h2>
+            <div class="test-grid">
+                <div>
+                    <h3>Navigation Tests</h3>
+                    <button onclick="testNavigation()">Test Navigation</button>
+                    <button onclick="testMobileMenu()">Test Mobile Menu</button>
+                </div>
+                <div>
+                    <h3>Data Tests</h3>
+                    <button onclick="testDataStorage()">Test Data Storage</button>
+                    <button onclick="testFormValidation()">Test Form Validation</button>
+                </div>
+                <div>
+                    <h3>Functionality Tests</h3>
+                    <button onclick="testCRUDOperations()">Test CRUD Operations</button>
+                    <button onclick="testResponsiveDesign()">Test Responsive Design</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🚀 Quick Actions</h2>
+            <button onclick="window.open('index.html', '_blank')">Open Main Application</button>
+            <button onclick="clearAllData()">Clear All Data</button>
+            <button onclick="addTestData()">Add Test Data</button>
+            <button onclick="runAllTests()">Run All Tests</button>
+        </div>
+    </div>
+
+    <script>
+        let testResults = [];
+        
+        function addTestResult(testName, passed, message = '') {
+            const result = {
+                name: testName,
+                passed: passed,
+                message: message,
+                timestamp: new Date().toLocaleTimeString()
+            };
+            testResults.push(result);
+            displayResults();
+        }
+        
+        function displayResults() {
+            const container = document.getElementById('testResults');
+            container.innerHTML = '';
+            
+            testResults.forEach(result => {
+                const div = document.createElement('div');
+                div.className = `test-result ${result.passed ? 'pass' : 'fail'}`;
+                div.innerHTML = `
+                    <strong>${result.passed ? '✅ PASS' : '❌ FAIL'}</strong> - ${result.name}
+                    ${result.message ? `<br><small>${result.message}</small>` : ''}
+                    <br><small>Time: ${result.timestamp}</small>
+                `;
+                container.appendChild(div);
+            });
+            
+            const summary = document.createElement('div');
+            const passed = testResults.filter(r => r.passed).length;
+            const total = testResults.length;
+            summary.className = `test-result ${passed === total ? 'pass' : passed > 0 ? 'warning' : 'fail'}`;
+            summary.innerHTML = `<strong>Summary:</strong> ${passed}/${total} tests passed`;
+            container.appendChild(summary);
+        }
+        
+        function testNavigation() {
+            try {
+                // Test if navigation elements exist
+                const nav = document.querySelector('.navbar');
+                const navLinks = document.querySelectorAll('.nav-link');
+                const sections = document.querySelectorAll('.section');
+                
+                if (nav && navLinks.length > 0 && sections.length > 0) {
+                    addTestResult('Navigation Elements', true, 'All navigation elements found');
+                } else {
+                    addTestResult('Navigation Elements', false, 'Missing navigation elements');
+                }
+            } catch (error) {
+                addTestResult('Navigation Test', false, error.message);
+            }
+        }
+        
+        function testMobileMenu() {
+            try {
+                const hamburger = document.querySelector('.hamburger');
+                const navMenu = document.querySelector('.nav-menu');
+                
+                if (hamburger && navMenu) {
+                    addTestResult('Mobile Menu Elements', true, 'Mobile menu elements found');
+                } else {
+                    addTestResult('Mobile Menu Elements', false, 'Mobile menu elements missing');
+                }
+            } catch (error) {
+                addTestResult('Mobile Menu Test', false, error.message);
+            }
+        }
+        
+        function testDataStorage() {
+            try {
+                // Test localStorage functionality
+                const testKey = 'airline_test_key';
+                const testValue = 'test_value';
+                
+                localStorage.setItem(testKey, testValue);
+                const retrieved = localStorage.getItem(testKey);
+                localStorage.removeItem(testKey);
+                
+                if (retrieved === testValue) {
+                    addTestResult('LocalStorage', true, 'Data storage working correctly');
+                } else {
+                    addTestResult('LocalStorage', false, 'Data storage not working');
+                }
+            } catch (error) {
+                addTestResult('Data Storage Test', false, error.message);
+            }
+        }
+        
+        function testFormValidation() {
+            try {
+                // Test if form elements exist
+                const forms = [
+                    'flightForm',
+                    'passengerForm', 
+                    'bookingForm',
+                    'cancellationForm'
+                ];
+                
+                let allFormsExist = true;
+                forms.forEach(formId => {
+                    const form = document.getElementById(formId);
+                    if (!form) {
+                        allFormsExist = false;
+                    }
+                });
+                
+                if (allFormsExist) {
+                    addTestResult('Form Elements', true, 'All forms found');
+                } else {
+                    addTestResult('Form Elements', false, 'Some forms missing');
+                }
+            } catch (error) {
+                addTestResult('Form Validation Test', false, error.message);
+            }
+        }
+        
+        function testCRUDOperations() {
+            try {
+                // Test if CRUD functions exist
+                const functions = [
+                    'addSampleData',
+                    'displayFlights',
+                    'displayPassengers',
+                    'displayBookings',
+                    'displayCancellations',
+                    'saveData',
+                    'loadAllData'
+                ];
+                
+                let allFunctionsExist = true;
+                functions.forEach(funcName => {
+                    if (typeof window[funcName] !== 'function') {
+                        allFunctionsExist = false;
+                    }
+                });
+                
+                if (allFunctionsExist) {
+                    addTestResult('CRUD Functions', true, 'All CRUD functions available');
+                } else {
+                    addTestResult('CRUD Functions', false, 'Some CRUD functions missing');
+                }
+            } catch (error) {
+                addTestResult('CRUD Operations Test', false, error.message);
+            }
+        }
+        
+        function testResponsiveDesign() {
+            try {
+                // Test if responsive CSS classes exist
+                const responsiveClasses = [
+                    '.hamburger',
+                    '.nav-menu',
+                    '.stats-grid',
+                    '.form-row',
+                    '.action-buttons'
+                ];
+                
+                let allClassesExist = true;
+                responsiveClasses.forEach(className => {
+                    const elements = document.querySelectorAll(className);
+                    if (elements.length === 0) {
+                        allClassesExist = false;
+                    }
+                });
+                
+                if (allClassesExist) {
+                    addTestResult('Responsive Design', true, 'Responsive design elements found');
+                } else {
+                    addTestResult('Responsive Design', false, 'Some responsive elements missing');
+                }
+            } catch (error) {
+                addTestResult('Responsive Design Test', false, error.message);
+            }
+        }
+        
+        function clearAllData() {
+            try {
+                localStorage.removeItem('flights');
+                localStorage.removeItem('passengers');
+                localStorage.removeItem('bookings');
+                localStorage.removeItem('cancellations');
+                addTestResult('Clear Data', true, 'All data cleared successfully');
+            } catch (error) {
+                addTestResult('Clear Data', false, error.message);
+            }
+        }
+        
+        function addTestData() {
+            try {
+                if (typeof addSampleData === 'function') {
+                    addSampleData();
+                    addTestResult('Add Test Data', true, 'Sample data added successfully');
+                } else {
+                    addTestResult('Add Test Data', false, 'addSampleData function not found');
+                }
+            } catch (error) {
+                addTestResult('Add Test Data', false, error.message);
+            }
+        }
+        
+        function runAllTests() {
+            testResults = [];
+            testNavigation();
+            testMobileMenu();
+            testDataStorage();
+            testFormValidation();
+            testCRUDOperations();
+            testResponsiveDesign();
+        }
+        
+        // Run initial tests when page loads
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                runAllTests();
+            }, 1000);
+        });
+    </script>
+</body>
+</html> 

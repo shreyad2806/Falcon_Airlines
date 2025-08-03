@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flight Delay Prediction - Airline Management System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            padding: 30px;
+        }
+
+        .demo-section {
+            margin-bottom: 40px;
+            padding: 25px;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            background: #f8f9fa;
+        }
+
+        .demo-section h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .flight-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #555;
+        }
+
+        .form-group input, .form-group select {
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .predict-btn {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 15px;
+        }
+
+        .predict-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+        }
+
+        .predict-btn:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .prediction-result {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .prediction-result.show {
+            display: block;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .risk-low {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            color: white;
+        }
+
+        .risk-medium {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            color: white;
+        }
+
+        .risk-high {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+        }
+
+        .risk-display {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .risk-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+        }
+
+        .risk-score {
+            font-size: 24px;
+        }
+
+        .risk-label {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .risk-info {
+            flex: 1;
+            margin-left: 20px;
+        }
+
+        .recommendations {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .recommendations h4 {
+            margin-bottom: 10px;
+        }
+
+        .recommendations ul {
+            list-style: none;
+        }
+
+        .recommendations li {
+            padding: 5px 0;
+            position: relative;
+            padding-left: 20px;
+        }
+
+        .recommendations li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            font-weight: bold;
+        }
+
+        .sample-flights {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .flight-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .flight-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        }
+
+        .flight-route {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .flight-details {
+            color: #7f8c8d;
+            margin-bottom: 15px;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .status-api {
+            background: #3498db;
+            color: white;
+        }
+
+        .status-offline {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: #e74c3c;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .success-message {
+            background: #2ecc71;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>✈️ Flight Delay Prediction</h1>
+            <p>AI-Powered Risk Assessment for Your Airline Management System</p>
+            <div id="api-status" class="status-indicator status-offline">API Offline</div>
+        </div>
+
+        <div class="main-content">
+            <!-- Manual Flight Prediction -->
+            <div class="demo-section">
+                <h2>🔍 Check Flight Delay Risk</h2>
+                <form id="flight-prediction-form" class="flight-form">
+                    <div class="form-group">
+                        <label for="airline">Airline</label>
+                        <select id="airline" name="airline" required>
+                            <option value="AA">American Airlines (AA)</option>
+                            <option value="DL">Delta Air Lines (DL)</option>
+                            <option value="UA">United Airlines (UA)</option>
+                            <option value="SW">Southwest Airlines (SW)</option>
+                            <option value="JB">JetBlue Airways (JB)</option>
+                            <option value="AS">Alaska Airlines (AS)</option>
+                            <option value="NK">Spirit Airlines (NK)</option>
+                            <option value="F9">Frontier Airlines (F9)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="origin">Origin Airport</label>
+                        <select id="origin" name="origin" required>
+                            <option value="ATL">Atlanta (ATL)</option>
+                            <option value="LAX">Los Angeles (LAX)</option>
+                            <option value="ORD">Chicago O'Hare (ORD)</option>
+                            <option value="DFW">Dallas/Fort Worth (DFW)</option>
+                            <option value="DEN">Denver (DEN)</option>
+                            <option value="JFK">New York JFK (JFK)</option>
+                            <option value="SFO">San Francisco (SFO)</option>
+                            <option value="SEA">Seattle (SEA)</option>
+                            <option value="LAS">Las Vegas (LAS)</option>
+                            <option value="MCO">Orlando (MCO)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="destination">Destination Airport</label>
+                        <select id="destination" name="destination" required>
+                            <option value="ATL">Atlanta (ATL)</option>
+                            <option value="LAX">Los Angeles (LAX)</option>
+                            <option value="ORD">Chicago O'Hare (ORD)</option>
+                            <option value="DFW">Dallas/Fort Worth (DFW)</option>
+                            <option value="DEN">Denver (DEN)</option>
+                            <option value="JFK">New York JFK (JFK)</option>
+                            <option value="SFO">San Francisco (SFO)</option>
+                            <option value="SEA">Seattle (SEA)</option>
+                            <option value="LAS">Las Vegas (LAS)</option>
+                            <option value="MCO">Orlando (MCO)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="departure-date">Departure Date</label>
+                        <input type="date" id="departure-date" name="departure-date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="departure-time">Departure Time</label>
+                        <input type="time" id="departure-time" name="departure-time" value="08:00" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="distance">Distance (miles)</label>
+                        <input type="number" id="distance" name="distance" value="1000" min="100" max="5000">
+                    </div>
+                </form>
+                <button type="button" class="predict-btn" onclick="predictDelay()">
+                    <span id="predict-btn-text">Predict Delay Risk</span>
+                    <span id="predict-loading" class="loading" style="display: none;"></span>
+                </button>
+                
+                <div id="prediction-result" class="prediction-result">
+                    <!-- Prediction results will be displayed here -->
+                </div>
+            </div>
+
+            <!-- Sample Flight Cards -->
+            <div class="demo-section">
+                <h2>📋 Sample Flight Predictions</h2>
+                <p>Click on any flight to see its delay risk assessment:</p>
+                <div class="sample-flights">
+                    <div class="flight-card" onclick="predictSampleFlight(0)">
+                        <div class="flight-route">JFK → LAX</div>
+                        <div class="flight-details">
+                            American Airlines • Monday 8:00 AM<br>
+                            Distance: 2,500 miles • Summer Travel
+                        </div>
+                        <div id="sample-result-0"></div>
+                    </div>
+                    <div class="flight-card" onclick="predictSampleFlight(1)">
+                        <div class="flight-route">ORD → DEN</div>
+                        <div class="flight-details">
+                            Southwest Airlines • Friday 6:00 PM<br>
+                            Distance: 900 miles • Winter Weather
+                        </div>
+                        <div id="sample-result-1"></div>
+                    </div>
+                    <div class="flight-card" onclick="predictSampleFlight(2)">
+                        <div class="flight-route">ATL → MIA</div>
+                        <div class="flight-details">
+                            Delta Air Lines • Wednesday 2:00 PM<br>
+                            Distance: 600 miles • Clear Weather
+                        </div>
+                        <div id="sample-result-2"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // API Configuration
+        const API_URL = 'http://localhost:5000/api';
+        let isApiAvailable = false;
+
+        // Sample flight data
+        const sampleFlights = [
+            {
+                airline: 'AA',
+                origin_airport: 'JFK',
+                dest_airport: 'LAX',
+                departure_time: '2024-07-15T08:00:00Z',
+                distance: 2500,
+                temperature: 85,
+                wind_speed: 15,
+                visibility: 10,
+                precipitation: 0,
+                origin_congestion: 0.7,
+                dest_congestion: 0.6
+            },
+            {
+                airline: 'SW',
+                origin_airport: 'ORD',
+                dest_airport: 'DEN',
+                departure_time: '2024-12-20T18:00:00Z',
+                distance: 900,
+                temperature: 25,
+                wind_speed: 30,
+                visibility: 3,
+                precipitation: 0.8,
+                origin_congestion: 0.8,
+                dest_congestion: 0.4
+            },
+            {
+                airline: 'DL',
+                origin_airport: 'ATL',
+                dest_airport: 'MIA',
+                departure_time: '2024-03-15T14:00:00Z',
+                distance: 600,
+                temperature: 75,
+                wind_speed: 8,
+                visibility: 10,
+                precipitation: 0,
+                origin_congestion: 0.3,
+                dest_congestion: 0.2
+            }
+        ];
+
+        // Check API status on page load
+        async function checkApiStatus() {
+            try {
+                const response = await fetch(`${API_URL}/health`);
+                const data = await response.json();
+                isApiAvailable = data.model_loaded;
+                
+                const statusElement = document.getElementById('api-status');
+                if (isApiAvailable) {
+                    statusElement.textContent = 'API Online';
+                    statusElement.className = 'status-indicator status-api';
+                } else {
+                    statusElement.textContent = 'Model Loading...';
+                    statusElement.className = 'status-indicator status-offline';
+                }
+            } catch (error) {
+                console.error('API not available:', error);
+                isApiAvailable = false;
+                const statusElement = document.getElementById('api-status');
+                statusElement.textContent = 'API Offline (Using Demo Mode)';
+                statusElement.className = 'status-indicator status-offline';
+            }
+        }
+
+        // Predict delay for manual form
+        async function predictDelay() {
+            const form = document.getElementById('flight-prediction-form');
+            const formData = new FormData(form);
+            
+            // Show loading state
+            const btnText = document.getElementById('predict-btn-text');
+            const loading = document.getElementById('predict-loading');
+            const btn = document.querySelector('.predict-btn');
+            
+            btnText.style.display = 'none';
+            loading.style.display = 'inline-block';
+            btn.disabled = true;
+
+            try {
+                const flightData = {
+                    airline: formData.get('airline'),
+                    origin_airport: formData.get('origin'),
+                    dest_airport: formData.get('destination'),
+                    departure_time: formData.get('departure-date') + 'T' + formData.get('departure-time') + ':00Z',
+                    distance: parseInt(formData.get('distance')) || 1000,
+                    temperature: 70,
+                    wind_speed: 10,
+                    visibility: 10,
+                    precipitation: 0,
+                    origin_congestion: 0.5,
+                    dest_congestion: 0.5
+                };
+
+                let prediction;
+                if (isApiAvailable) {
+                    const response = await fetch(`${API_URL}/predict-delay`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(flightData)
+                    });
+                    prediction = await response.json();
+                } else {
+                    // Demo mode - simulate prediction
+                    prediction = simulatePrediction(flightData);
+                }
+
+                displayPrediction(prediction, 'prediction-result');
+
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Error predicting delay. Please try again.');
+            } finally {
+                // Reset button state
+                btnText.style.display = 'inline';
+                loading.style.display = 'none';
+                btn.disabled = false;
+            }
+        }
+
+        // Predict delay for sample flights
+        async function predictSampleFlight(index) {
+            const resultElement = document.getElementById(`sample-result-${index}`);
+            resultElement.innerHTML = '<div class="loading"></div>';
+
+            try {
+                const flightData = sampleFlights[index];
+                
+                let prediction;
+                if (isApiAvailable) {
+                    const response = await fetch(`${API_URL}/predict-delay`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(flightData)
+                    });
+                    prediction = await response.json();
+                } else {
+                    // Demo mode
+                    prediction = simulatePrediction(flightData);
+                }
+
+                displaySamplePrediction(prediction, resultElement);
+
+            } catch (error) {
+                console.error('Error:', error);
+                resultElement.innerHTML = '<div class="error-message">Error loading prediction</div>';
+            }
+        }
+
+        // Simulate prediction for demo mode
+        function simulatePrediction(flightData) {
+            // Simple simulation based on flight characteristics
+            let riskScore = 20; // Base risk
+            
+            // Airline effect
+            if (['NK', 'F9', 'G4'].includes(flightData.airline)) riskScore += 20;
+            if (['DL', 'AA'].includes(flightData.airline)) riskScore -= 10;
+            
+            // Time effect
+            const hour = new Date(flightData.departure_time).getHours();
+            if ([7, 8, 17, 18, 19].includes(hour)) riskScore += 25;
+            
+            // Weather effect
+            if (flightData.wind_speed > 25) riskScore += 30;
+            if (flightData.visibility < 5) riskScore += 25;
+            if (flightData.precipitation > 0.5) riskScore += 20;
+            
+            // Cap at 95
+            riskScore = Math.min(riskScore, 95);
+            
+            const riskLevel = riskScore < 30 ? 'Low' : riskScore < 60 ? 'Medium' : 'High';
+            
+            const recommendations = {
+                'Low': ['Flight is likely to be on time', 'Standard arrival planning should be sufficient'],
+                'Medium': ['Monitor flight status closely', 'Allow some buffer time for connections', 'Check weather forecast'],
+                'High': ['Consider booking an earlier flight', 'Allow extra time for connections', 'Check weather conditions before departure', 'Consider travel insurance']
+            };
+
+            return {
+                risk_score: riskScore,
+                risk_level: riskLevel,
+                delay_probability: riskScore / 100,
+                recommendations: recommendations[riskLevel],
+                flight_info: {
+                    airline: flightData.airline,
+                    route: `${flightData.origin_airport} → ${flightData.dest_airport}`,
+                    departure_time: flightData.departure_time
+                }
+            };
+        }
+
+        // Display prediction results
+        function displayPrediction(prediction, elementId) {
+            const resultElement = document.getElementById(elementId);
+            const riskClass = `risk-${prediction.risk_level.toLowerCase()}`;
+            
+            resultElement.innerHTML = `
+                <div class="risk-display">
+                    <div class="risk-circle">
+                        <div class="risk-score">${prediction.risk_score}</div>
+                        <div class="risk-label">${prediction.risk_level}</div>
+                    </div>
+                    <div class="risk-info">
+                        <h3>Delay Risk Assessment</h3>
+                        <p><strong>Route:</strong> ${prediction.flight_info.route}</p>
+                        <p><strong>Airline:</strong> ${prediction.flight_info.airline}</p>
+                        <p><strong>Delay Probability:</strong> ${(prediction.delay_probability * 100).toFixed(1)}%</p>
+                    </div>
+                </div>
+                <div class="recommendations">
+                    <h4>Recommendations:</h4>
+                    <ul>
+                        ${prediction.recommendations.map(rec => `<li>${rec}</li>`).join('')}
+                    </ul>
+                </div>
+            `;
+            
+            resultElement.className = `prediction-result ${riskClass} show`;
+        }
+
+        // Display sample prediction results
+        function displaySamplePrediction(prediction, element) {
+            const riskClass = `risk-${prediction.risk_level.toLowerCase()}`;
+            element.innerHTML = `
+                <div style="background: ${getRiskColor(prediction.risk_level)}; color: white; padding: 10px; border-radius: 5px; text-align: center; margin-top: 10px;">
+                    <strong>${prediction.risk_score}/100 - ${prediction.risk_level} Risk</strong><br>
+                    <small>${(prediction.delay_probability * 100).toFixed(1)}% delay probability</small>
+                </div>
+            `;
+        }
+
+        // Get risk color
+        function getRiskColor(riskLevel) {
+            const colors = {
+                'Low': '#2ecc71',
+                'Medium': '#f39c12',
+                'High': '#e74c3c'
+            };
+            return colors[riskLevel] || '#95a5a6';
+        }
+
+        // Show error message
+        function showError(message) {
+            const resultElement = document.getElementById('prediction-result');
+            resultElement.innerHTML = `<div class="error-message">${message}</div>`;
+            resultElement.className = 'prediction-result show';
+        }
+
+        // Set default date to tomorrow
+        function setDefaultDate() {
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const dateString = tomorrow.toISOString().split('T')[0];
+            document.getElementById('departure-date').value = dateString;
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', () => {
+            checkApiStatus();
+            setDefaultDate();
+            
+            // Check API status every 30 seconds
+            setInterval(checkApiStatus, 30000);
+        });
+    </script>
+</body>
+</html>
