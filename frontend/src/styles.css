@@ -1,0 +1,21 @@
+:root{--accent:#0b66ff;--muted:#6b7280;--bg:#f5f7fb}
+*{box-sizing:border-box}
+body,html,#root{height:100%;margin:0;font-family:Inter,system-ui,Arial,sans-serif;background:var(--bg)}
+.nav{background:#fff;border-bottom:1px solid #e6eef9}
+.nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:14px}
+.brand{font-weight:700;color:var(--accent)}
+.nav-links button{background:none;border:none;padding:8px 12px;margin-left:8px;border-radius:6px;cursor:pointer}
+.nav-links .active{background:rgba(11,102,255,0.08);color:var(--accent)}
+.container{max-width:1100px;margin:28px auto;padding:18px}
+.hero{background:linear-gradient(90deg,#ffffff,#f7fbff);padding:28px;border-radius:10px;box-shadow:0 6px 20px rgba(15,30,60,0.04)}
+.hero h1{margin:0 0 8px}
+.hero p{color:var(--muted)}
+.hero-actions{margin-top:14px}
+.hero-actions button{background:var(--accent);color:#fff;border:none;padding:10px 14px;border-radius:8px}
+.cards{display:flex;gap:14px;margin-top:18px}
+.card{flex:1;background:#fff;padding:18px;border-radius:8px;border:1px solid #eef6ff}
+.demo-form{max-width:540px;margin-top:12px}
+.demo-form .row{display:flex;flex-direction:column;margin-bottom:10px}
+.demo-form input{padding:10px;border-radius:6px;border:1px solid #dbeafe}
+.demo-form .actions button{background:var(--accent);color:#fff;border:none;padding:10px 14px;border-radius:6px}
+.result pre{background:#0b1220;color:#e6f0ff;padding:12px;border-radius:8px;overflow:auto}
