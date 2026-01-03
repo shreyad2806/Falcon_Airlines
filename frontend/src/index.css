@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* small defaults */
+html,body,#root{height:100%}
+body{@apply bg-slate-50 text-slate-900}
+.container{max-width:1100px;margin:28px auto;padding:18px}
