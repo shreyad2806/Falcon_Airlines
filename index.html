@@ -34,6 +34,9 @@
                 <li class="nav-item">
                     <a href="#delay-prediction" class="nav-link">Delay Prediction</a>
                 </li>
+                <li class="nav-item">
+                    <a href="#fare-prediction" class="nav-link">Fare Prediction</a>
+                </li>
             </ul>
             <div class="hamburger">
                 <span class="bar"></span>
@@ -539,6 +542,52 @@
                 </div>
             </div>
         </section>
+
+        <section id="fare-prediction" class="section">
+            <div class="section-container">
+                <h2 class="section-title">Fare Prediction & Alerts</h2>
+                <div class="fare-prediction-container">
+                    <div class="api-status-container">
+                        <div id="fare-api-status" class="status-indicator status-offline">Backend Offline</div>
+                    </div>
+                    
+                    <div class="fare-alerts-section">
+                        <h3>Current Fare Alerts</h3>
+                        <div id="fareAlerts" class="alerts-container">
+                            <div class="loading-message">Loading fare predictions...</div>
+                        </div>
+                    </div>
+                    
+                    <div class="fare-forecast-section">
+                        <h3>30-Day Price Forecast</h3>
+                        <div id="fareForecast" class="forecast-container">
+                            <div class="loading-message">Loading price forecast...</div>
+                        </div>
+                    </div>
+                    
+                    <div class="fare-tips-section">
+                        <h3>Booking Tips</h3>
+                        <div class="tips-container">
+                            <div class="tip-card">
+                                <i class="fas fa-calendar-alt"></i>
+                                <h4>Best Time to Book</h4>
+                                <p>Book 6-8 weeks in advance for domestic flights and 2-3 months for international flights.</p>
+                            </div>
+                            <div class="tip-card">
+                                <i class="fas fa-chart-line"></i>
+                                <h4>Price Trends</h4>
+                                <p>Prices typically drop on Tuesdays and Wednesdays. Avoid booking on weekends.</p>
+                            </div>
+                            <div class="tip-card">
+                                <i class="fas fa-bell"></i>
+                                <h4>Set Alerts</h4>
+                                <p>Enable notifications to get alerted when prices drop for your preferred routes.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
     </main>
 
     <div id="editModal" class="modal">
@@ -553,5 +602,7 @@
     <div id="messageContainer" class="message-container"></div>
 
     <script src="frontend/js/script.js"></script>
+    <script src="frontend/js/delay_prediction.js"></script>
+    <script src="frontend/js/fare_prediction.js"></script>
 </body>
 </html>

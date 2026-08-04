@@ -1,0 +1,32 @@
+name: Build
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: "temurin"
+          cache: "maven"
+
+      - name: Build with Maven
+        working-directory: ./backend
+        run: mvn -B -DskipTests clean package
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: falcon-airlines-jar
+          path: backend/target/*.jar

@@ -1,0 +1,25 @@
+name: Code Quality
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  code-quality:
+    runs-on: ubuntu-latest
+    name: Static Analysis Placeholder
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: "temurin"
+
+      - name: Placeholder quality gate
+        run: echo "Phase 1 placeholder. SonarQube / Checkstyle / SpotBugs to be added in Phase 2."

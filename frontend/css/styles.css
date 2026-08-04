@@ -769,4 +769,197 @@ body {
     .sample-flights-grid {
         grid-template-columns: 1fr;
     }
+}
+
+/* Fare Prediction Styles */
+.fare-prediction-container {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    padding: 30px;
+    margin-top: 20px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.fare-alerts-section,
+.fare-forecast-section,
+.fare-tips-section {
+    margin-bottom: 40px;
+}
+
+.fare-alerts-section h3,
+.fare-forecast-section h3,
+.fare-tips-section h3 {
+    color: #1d4887;
+    margin-bottom: 20px;
+    font-size: 1.4em;
+    font-weight: 600;
+}
+
+.alerts-container {
+    display: grid;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.alert-card {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+    color: white;
+    padding: 20px;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    box-shadow: 0 5px 15px rgba(238, 90, 36, 0.3);
+    transition: transform 0.3s ease;
+}
+
+.alert-card.drop {
+    background: linear-gradient(135deg, #00b894, #00a085);
+    box-shadow: 0 5px 15px rgba(0, 184, 148, 0.3);
+}
+
+.alert-card:hover {
+    transform: translateY(-2px);
+}
+
+.alert-icon {
+    font-size: 2em;
+    opacity: 0.9;
+}
+
+.alert-content h4 {
+    margin: 0 0 5px 0;
+    font-size: 1.1em;
+}
+
+.alert-content p {
+    margin: 0;
+    opacity: 0.9;
+}
+
+.forecast-container {
+    background: #f8f9fa;
+    border-radius: 15px;
+    padding: 20px;
+    overflow-x: auto;
+}
+
+.forecast-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.forecast-table th,
+.forecast-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.forecast-table th {
+    background: #1d4887;
+    color: white;
+    font-weight: 600;
+}
+
+.forecast-table tr:hover {
+    background: rgba(29, 72, 135, 0.05);
+}
+
+.price-trend {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 8px;
+    border-radius: 20px;
+    font-size: 0.9em;
+    font-weight: 500;
+}
+
+.price-trend.up {
+    background: rgba(238, 90, 36, 0.1);
+    color: #ee5a24;
+}
+
+.price-trend.down {
+    background: rgba(0, 184, 148, 0.1);
+    color: #00b894;
+}
+
+.price-trend.stable {
+    background: rgba(116, 125, 136, 0.1);
+    color: #747d8c;
+}
+
+.tips-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.tip-card {
+    background: white;
+    padding: 25px;
+    border-radius: 15px;
+    text-align: center;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.tip-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+.tip-card i {
+    font-size: 2.5em;
+    color: #fcb130;
+    margin-bottom: 15px;
+}
+
+.tip-card h4 {
+    color: #1d4887;
+    margin-bottom: 10px;
+    font-size: 1.2em;
+}
+
+.tip-card p {
+    color: #666;
+    line-height: 1.6;
+}
+
+.loading-message {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+    font-style: italic;
+}
+
+.error-message {
+    background: rgba(238, 90, 36, 0.1);
+    color: #ee5a24;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    border: 1px solid rgba(238, 90, 36, 0.2);
+}
+
+@media (max-width: 768px) {
+    .fare-prediction-container {
+        padding: 20px;
+    }
+
+    .tips-container {
+        grid-template-columns: 1fr;
+    }
+
+    .forecast-container {
+        overflow-x: auto;
+    }
+
+    .forecast-table {
+        min-width: 500px;
+    }
 } 

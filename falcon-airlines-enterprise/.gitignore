@@ -1,0 +1,57 @@
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDEs
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+.project
+.classpath
+.settings/
+.angular/
+
+# Build output
+backend/target/
+frontend/build/
+frontend/dist/
+python-ai/__pycache__/
+python-ai/.pytest_cache/
+*.jar
+*.war
+*.class
+*.log
+
+# Node
+frontend/node_modules/
+frontend/package-lock.json
+frontend/yarn.lock
+
+# Python
+python-ai/venv/
+python-ai/.venv/
+*.pyc
+*.pyo
+
+# Environment
+.env
+.env.local
+.env.*.local
+*.env
+
+# Docker
+.docker/
+
+# Database
+postgres-data/
+
+# Testing
+test-output/
+
+# Misc
+*.swp
+*.swo
+*~

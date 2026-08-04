@@ -1,0 +1,3 @@
+-- Phase 1: baseline migration
+-- No tables are created yet. This placeholder establishes the Flyway history table.
+-- Schema creation will begin in Phase 2 based on the approved database design.
