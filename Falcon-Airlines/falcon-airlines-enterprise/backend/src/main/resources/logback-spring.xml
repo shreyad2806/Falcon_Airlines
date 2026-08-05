@@ -15,8 +15,10 @@
         <file>${LOG_FILE}</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <fileNamePattern>logs/falcon-airlines-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <maxFileSize>100MB</maxFileSize>
+            </timeBasedFileNamingAndTriggeringPolicy>
             <maxHistory>30</maxHistory>
-            <maxFileSize>100MB</maxFileSize>
             <totalSizeCap>1GB</totalSizeCap>
         </rollingPolicy>
         <encoder>

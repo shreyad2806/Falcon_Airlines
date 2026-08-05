@@ -1,7 +1,7 @@
 package com.falcon.airlines.common;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.MappedSuperclass;
+import com.falcon.airlines.entity.User;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -14,9 +14,11 @@ import lombok.Setter;
 @MappedSuperclass
 public abstract class AuditEntity extends BaseEntity {
 
-    @Column(name = "created_by")
-    private Long createdBy;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by")
+    private User createdBy;
 
-    @Column(name = "updated_by")
-    private Long updatedBy;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "updated_by")
+    private User updatedBy;
 }

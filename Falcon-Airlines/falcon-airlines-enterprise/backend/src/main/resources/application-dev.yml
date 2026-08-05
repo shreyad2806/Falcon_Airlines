@@ -6,11 +6,32 @@ spring:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/falcon_airlines}
     username: ${SPRING_DATASOURCE_USERNAME:postgres}
     password: ${SPRING_DATASOURCE_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
   jpa:
     show-sql: false
   flyway:
     enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+server:
+  error:
+    include-message: always
+    include-binding-errors: always
 
 logging:
   level:
+    root: INFO
     com.falcon.airlines: DEBUG
+    org.springframework.web: DEBUG
+
+management:
+  endpoint:
+    health:
+      show-details: always
