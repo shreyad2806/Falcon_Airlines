@@ -4,35 +4,35 @@ Thumbs.db
 desktop.ini
 
 # IDEs
-.idea/
-.vscode/
+**/.idea/
+**/.vscode/
 *.iml
 *.iws
 *.ipr
 .project
 .classpath
-.settings/
-.angular/
+**/.settings/
+**/.angular/
 
 # Build output
-backend/target/
-frontend/build/
-frontend/dist/
-python-ai/__pycache__/
-python-ai/.pytest_cache/
+**/target/
+**/build/
+**/dist/
+**/__pycache__/
+**/.pytest_cache/
 *.jar
 *.war
 *.class
 *.log
 
 # Node
-frontend/node_modules/
-frontend/package-lock.json
-frontend/yarn.lock
+**/node_modules/
+**/package-lock.json
+**/yarn.lock
 
 # Python
-python-ai/venv/
-python-ai/.venv/
+**/venv/
+**/.venv/
 *.pyc
 *.pyo
 
@@ -43,16 +43,16 @@ python-ai/.venv/
 *.env
 
 # Docker
-.docker/
+**/.docker/
 
 # Database
-postgres-data/
+**/postgres-data/
 
 # Testing
-test-output/
+**/test-output/
 
 # Misc
 *.swp
 *.swo
 *~
-logs/
+**/logs/
