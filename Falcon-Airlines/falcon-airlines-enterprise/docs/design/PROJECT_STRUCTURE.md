@@ -4,45 +4,45 @@
 falcon-airlines-enterprise/
 ├── backend/
 │   ├── src/main/java/com/falcon/airlines/
-│   │   ├── controller/      # REST controllers
-│   │   ├── service/         # Business logic
-│   │   ├── repository/      # Spring Data JPA repositories
-│   │   ├── entity/          # JPA entities
-│   │   ├── dto/             # Data transfer objects
-│   │   ├── mapper/          # MapStruct mappers
-│   │   ├── security/        # JWT and RBAC (Phase 2)
-│   │   ├── config/          # Spring and OpenAPI config
-│   │   ├── validation/      # Custom validators
-│   │   ├── exception/       # Global exception handling
-│   │   ├── util/            # Utility classes
-│   │   ├── scheduler/       # Scheduled jobs
-│   │   ├── integration/     # External service clients
-│   │   ├── constant/        # Application constants
-│   │   ├── common/          # Shared base classes
-│   │   ├── audit/           # Audit helpers
-│   │   ├── event/           # Domain events
-│   │   ├── logging/         # Logging utilities
-│   │   ├── health/          # Custom health checks
-│   │   ├── response/        # Standard response wrappers
-│   │   ├── request/         # Request DTOs
-│   │   └── enums/           # Enumerations
+│   │   ├── FalconAirlinesApplication.java
+│   │   ├── common/              # BaseEntity, AuditEntity
+│   │   ├── config/              # OpenApiConfig
+│   │   ├── constant/            # ApplicationConstants
+│   │   ├── dto/                 # Request/Response DTOs (Phase 2 core)
+│   │   ├── entity/              # JPA entities (17 tables)
+│   │   ├── enums/               # Domain enumerations
+│   │   ├── exception/           # BaseException, GlobalExceptionHandler
+│   │   ├── mapper/              # MapStruct mappers
+│   │   ├── repository/          # Spring Data JPA repositories
+│   │   ├── response/            # ApiResponse, ApiErrorResponse
+│   │   └── util/                # DateTimeUtil, StringUtil
 │   ├── src/main/resources/
-│   │   ├── db/migration/    # Flyway SQL migrations
-│   │   ├── static/          # Static assets
-│   │   ├── templates/       # Email templates
-│   │   └── application*.yml # Spring profiles
-│   └── pom.xml
-├── frontend/                # React (Phase 2)
-├── python-ai/               # FastAPI ML (Phase 3)
-├── database/
-│   └── migrations/          # Reference migrations
+│   │   ├── application*.yml
+│   │   ├── banner.txt
+│   │   ├── logback-spring.xml
+│   │   └── db/migration/
+│   │       ├── V1__baseline.sql
+│   │       ├── V2__create_schema.sql
+│   │       └── V3__seed_reference_data.sql
+│   └── src/test/java/com/falcon/airlines/
+│       ├── FalconAirlinesApplicationTest.java
+│       ├── common/
+│       │   ├── BaseIntegrationTest.java
+│       │   └── BaseUnitTest.java
+│       ├── config/
+│       │   └── TestcontainersConfig.java
+│       └── repository/
+│           └── DatabaseLayerIntegrationTest.java
 ├── docker/
 │   ├── Dockerfile
 │   ├── docker-compose.yml
 │   └── .env.example
-├── docs/                    # Design documents
-├── learning/                # 20 learning notes
-├── .github/
-│   └── workflows/           # CI/CD
-└── scripts/                 # Automation scripts
+├── docs/
+│   ├── design/
+│   ├── learning/
+│   └── setup/
+├── frontend/                    # Phase 3
+└── python-ai/                   # Phase 4
 ```
+
+> Phase 1 provided the engineering foundation. Phase 2 added the database layer (Flyway schema, 17 JPA entities, repositories, DTOs/mappers for core domains, seed data, and integration tests). Phase 3 will add authentication and business services.

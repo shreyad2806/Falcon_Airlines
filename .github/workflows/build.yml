@@ -20,13 +20,14 @@ jobs:
           java-version: "21"
           distribution: "temurin"
           cache: "maven"
+          cache-dependency-path: Falcon-Airlines/falcon-airlines-enterprise/backend/pom.xml
 
       - name: Build with Maven
-        working-directory: ./backend
+        working-directory: Falcon-Airlines/falcon-airlines-enterprise/backend
         run: mvn -B -DskipTests clean package
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: falcon-airlines-jar
-          path: backend/target/*.jar
+          path: Falcon-Airlines/falcon-airlines-enterprise/backend/target/*.jar

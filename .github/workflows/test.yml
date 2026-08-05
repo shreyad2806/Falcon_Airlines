@@ -20,9 +20,10 @@ jobs:
           java-version: "21"
           distribution: "temurin"
           cache: "maven"
+          cache-dependency-path: Falcon-Airlines/falcon-airlines-enterprise/backend/pom.xml
 
       - name: Run tests
-        working-directory: ./backend
+        working-directory: Falcon-Airlines/falcon-airlines-enterprise/backend
         run: mvn -B verify
 
       - name: Upload test results
@@ -30,4 +31,4 @@ jobs:
         if: failure()
         with:
           name: test-reports
-          path: backend/target/surefire-reports
+          path: Falcon-Airlines/falcon-airlines-enterprise/backend/target/surefire-reports

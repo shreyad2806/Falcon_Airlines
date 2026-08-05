@@ -1,50 +1,39 @@
 # Falcon Airlines Enterprise
 
-A production-grade Airline Reservation Platform built with Java 21, Spring Boot 3.x, PostgreSQL, React, and Docker.
+Production-grade Airline Reservation Platform — **Phase 1 backend foundation**.
 
 ## Status
 
-**Phase 1 — Project Foundation** (in progress).  
-This repository currently contains the monorepo skeleton, Spring Boot backend foundation, Docker environment, CI/CD scaffolding, and learning documentation. Business modules (auth, booking, payment, ticketing) are planned for later phases.
+Phase 1 is complete: a runnable Spring Boot 3.x backend with Java 21, PostgreSQL, Flyway, Docker, Testcontainers, Swagger and GitHub Actions.
 
-## Technology Stack
-
-- **Backend**: Java 21, Spring Boot 3.x, Spring Security, Spring Data JPA, Hibernate, JDBC
-- **Database**: PostgreSQL 16, Flyway
-- **Frontend**: React (planned)
-- **AI/ML**: Python FastAPI (planned)
-- **DevOps**: Docker, Docker Compose, GitHub Actions
-- **API Docs**: OpenAPI / SpringDoc
-- **Testing**: JUnit 5, Mockito, Testcontainers
-
-## Repository Structure
-
-```
-falcon-airlines-enterprise/
-├── backend/        # Spring Boot application
-├── frontend/       # React application
-├── python-ai/      # Machine learning microservices
-├── database/       # Migrations and seeds
-├── docker/         # Docker and compose files
-├── docs/           # Architecture and design docs
-├── learning/       # Interview and learning notes
-├── .github/        # GitHub Actions workflows
-└── scripts/        # Automation scripts
-```
+Business modules (auth, booking, payment, ticketing) are planned for Phase 2.
 
 ## Quick Start
 
-See [SETUP.md](./SETUP.md) for environment setup.
+```bash
+cd Falcon-Airlines/falcon-airlines-enterprise/docker
+cp .env.example .env
+docker-compose up -d postgres
+
+cd ../backend
+mvn clean install
+mvn spring-boot:run -Dspring.profiles.active=dev
+```
+
+Verify the foundation:
+
+- Health: http://localhost:8080/actuator/health
+- Swagger UI: http://localhost:8080/swagger-ui.html
+
+## Run Everything in Docker
 
 ```bash
-cd docker
+cd Falcon-Airlines/falcon-airlines-enterprise/docker
 docker-compose up -d
 ```
 
-## Documentation
+## Structure & Setup
 
-- [PROJECT_STRUCTURE.md](./PROJECT_STRUCTURE.md)
-- [ARCHITECTURE_OVERVIEW.md](./ARCHITECTURE_OVERVIEW.md)
-- [ROADMAP.md](./ROADMAP.md)
-- [CONTRIBUTING.md](./CONTRIBUTING.md)
-- [learning/](./learning/)
+- `docs/setup/SETUP.md` — detailed setup and test commands
+- `docs/design/PROJECT_STRUCTURE.md` — repository layout
+- `docs/learning/` — focused technology notes
