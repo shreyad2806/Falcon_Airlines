@@ -3,7 +3,7 @@ spring:
     activate:
       on-profile: dev
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/falcon_airlines}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:${POSTGRES_HOST_PORT:5433}/falcon_airlines}
     username: ${SPRING_DATASOURCE_USERNAME:postgres}
     password: ${SPRING_DATASOURCE_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver

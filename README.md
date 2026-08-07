@@ -34,7 +34,7 @@ Rather than being a simple CRUD application, Falcon showcases how a real-world a
 
 <p align="center">
 
-<img src="./docs/architecture/arch.png" width="100%" alt="Falcon Airlines Enterprise Architecture"/>
+<img src=".\Falcon-Airlines\docs\architecture\arch.png" width="100%" alt="Falcon Airlines Enterprise Architecture"/>
 
 </p>
 
