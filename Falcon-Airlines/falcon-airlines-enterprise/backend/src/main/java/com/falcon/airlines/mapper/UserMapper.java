@@ -1,5 +1,6 @@
 package com.falcon.airlines.mapper;
 
+import com.falcon.airlines.dto.request.RegisterRequest;
 import com.falcon.airlines.dto.request.UserRequest;
 import com.falcon.airlines.dto.response.UserResponse;
 import com.falcon.airlines.entity.User;
@@ -12,6 +13,9 @@ public interface UserMapper {
 
     @Mapping(target = "passwordHash", source = "password")
     User toEntity(UserRequest dto);
+
+    @Mapping(target = "passwordHash", source = "password")
+    User toEntity(RegisterRequest dto);
 
     UserResponse toResponse(User entity);
 }

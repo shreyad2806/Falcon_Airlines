@@ -40,3 +40,8 @@ management:
       enabled: true
     env:
       enabled: true
+
+jwt:
+  secret: ${JWT_SECRET:FalconAirlinesDefaultSecretKeyForJwtHmacAtLeast32Chars}
+  access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:900}
+  refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:604800}

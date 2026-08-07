@@ -6,6 +6,9 @@ import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authorization.AuthorizationDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -21,6 +24,24 @@ import java.util.UUID;
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler({AuthorizationDeniedException.class, AccessDeniedException.class})
+    public ResponseEntity<ApiErrorResponse> handleAuthorizationDenied(RuntimeException ex, HttpServletRequest request) {
+        String traceId = UUID.randomUUID().toString();
+        log.warn("Access denied traceId={} path={} message={}", traceId, request.getRequestURI(), ex.getMessage());
+
+        ApiErrorResponse response = ApiErrorResponse.builder()
+                .success(false)
+                .status(HttpStatus.FORBIDDEN.value())
+                .error("ACCESS_DENIED")
+                .message("You do not have permission to access this resource")
+                .path(request.getRequestURI())
+                .traceId(traceId)
+                .timestamp(Instant.now())
+                .build();
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+    }
 
     @ExceptionHandler(BaseException.class)
     public ResponseEntity<ApiErrorResponse> handleBaseException(BaseException ex, HttpServletRequest request) {
@@ -63,6 +84,24 @@ public class GlobalExceptionHandler {
                 .build();
 
         return ResponseEntity.badRequest().body(response);
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ApiErrorResponse> handleAuthenticationException(AuthenticationException ex, HttpServletRequest request) {
+        String traceId = UUID.randomUUID().toString();
+        log.warn("Authentication failure traceId={} path={} message={}", traceId, request.getRequestURI(), ex.getMessage());
+
+        ApiErrorResponse response = ApiErrorResponse.builder()
+                .success(false)
+                .status(HttpStatus.UNAUTHORIZED.value())
+                .error("AUTHENTICATION_ERROR")
+                .message("Invalid username or password")
+                .path(request.getRequestURI())
+                .traceId(traceId)
+                .timestamp(Instant.now())
+                .build();
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
     }
 
     @ExceptionHandler(ConstraintViolationException.class)

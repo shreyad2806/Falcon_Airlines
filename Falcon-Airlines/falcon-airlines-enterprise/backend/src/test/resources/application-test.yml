@@ -12,6 +12,11 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
 
+jwt:
+  secret: this-is-a-very-long-test-secret-key-32-characters
+  access-token-expiration: 900
+  refresh-token-expiration: 604800
+
 logging:
   level:
     root: INFO

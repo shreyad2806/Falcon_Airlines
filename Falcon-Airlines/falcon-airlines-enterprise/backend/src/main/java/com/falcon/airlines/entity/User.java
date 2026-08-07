@@ -35,6 +35,9 @@ public class User extends AuditEntity {
     @Column(name = "mfa_enabled", nullable = false)
     private Boolean mfaEnabled;
 
+    @Column(name = "email_verified", nullable = false)
+    private Boolean emailVerified = false;
+
     @Column(name = "failed_login_attempts")
     private Short failedLoginAttempts;
 
