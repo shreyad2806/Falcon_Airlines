@@ -312,6 +312,18 @@ Core entities include:
 - Global Exception Handling
 - Audit Logging
 
+## Authentication & Authorization
+
+Detailed implementation documentation for the authentication and authorization
+layer:
+
+- [JWT Authentication Flow](Falcon-Airlines/falcon-airlines-enterprise/backend/docs/architecture/jwt-authentication-flow.md)
+- [Spring Security Request Lifecycle](Falcon-Airlines/falcon-airlines-enterprise/backend/docs/architecture/spring-security-lifecycle.md)
+- [Authentication Sequence](Falcon-Airlines/falcon-airlines-enterprise/backend/docs/architecture/authentication-sequence.md)
+- [Authorization Flow](Falcon-Airlines/falcon-airlines-enterprise/backend/docs/architecture/authorization-flow.md)
+- [Refresh Token Lifecycle](Falcon-Airlines/falcon-airlines-enterprise/backend/docs/architecture/refresh-token-lifecycle.md)
+- [Authentication Interview Notes](Falcon-Airlines/falcon-airlines-enterprise/backend/docs/interview/authentication-interview-notes.md)
+
 ---
 
 # ⚡ Performance & Scalability
