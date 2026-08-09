@@ -30,7 +30,7 @@ public class TestSecurityController {
         return "UP";
     }
 
-    @GetMapping("/api/flights")
+    @GetMapping("/api/security-test")
     public String flights() {
         return "[]";
     }

@@ -1,5 +1,6 @@
 package com.falcon.airlines.common;
 
+import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,21 +9,42 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.utility.DockerImageName;
+
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Base class for integration tests. Loads the full Spring context and points it
- * at the Docker Compose-managed PostgreSQL instance on a dedicated test database.
+ * Base class for integration tests. Loads the full Spring context and starts an
+ * isolated Testcontainers PostgreSQL instance for the test database.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class BaseIntegrationTest {
 
+    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>(
+            DockerImageName.parse("postgres:16-alpine"))
+            .withDatabaseName("falcon_airlines_test")
+            .withUsername("test")
+            .withPassword("test");
+
+    private static final AtomicBoolean SHUTDOWN_HOOK_ADDED = new AtomicBoolean(false);
+
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
+    @Autowired
+    private Flyway flyway;
+
     @BeforeAll
     void prepareAuthTestData() {
+        // Reset the Testcontainers database to a deterministic seed state for every
+        // integration test class. This is the isolation boundary: one shared
+        // PostgreSQL container with a fresh Flyway-migrated schema before each class.
+        flyway.clean();
+        flyway.migrate();
+
         String authUserPatterns = "'cust_%' OR username LIKE 'dupuser_%' OR username LIKE 'u1_%' OR username LIKE 'u2_%' OR username LIKE 'login_%' OR username LIKE 'badlogin_%' OR username LIKE 'reset_%' OR username LIKE 'verify_%'";
 
         jdbcTemplate.update("DELETE FROM email_verification_tokens WHERE user_id IN (SELECT id FROM users WHERE username LIKE " + authUserPatterns + ")");
@@ -39,12 +61,18 @@ public abstract class BaseIntegrationTest {
 
     @DynamicPropertySource
     static void registerDataSource(DynamicPropertyRegistry registry) {
-        String port = System.getenv().getOrDefault("POSTGRES_HOST_PORT", "5433");
-        String username = System.getenv().getOrDefault("SPRING_DATASOURCE_USERNAME", "postgres");
-        String password = System.getenv().getOrDefault("SPRING_DATASOURCE_PASSWORD", "postgres");
-
-        registry.add("spring.datasource.url", () -> "jdbc:postgresql://localhost:" + port + "/falcon_airlines_test");
-        registry.add("spring.datasource.username", () -> username);
-        registry.add("spring.datasource.password", () -> password);
+        if (!POSTGRES.isRunning()) {
+            POSTGRES.start();
+        }
+        if (SHUTDOWN_HOOK_ADDED.compareAndSet(false, true)) {
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                if (POSTGRES.isRunning()) {
+                    POSTGRES.stop();
+                }
+            }));
+        }
+        registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
+        registry.add("spring.datasource.username", POSTGRES::getUsername);
+        registry.add("spring.datasource.password", POSTGRES::getPassword);
     }
 }

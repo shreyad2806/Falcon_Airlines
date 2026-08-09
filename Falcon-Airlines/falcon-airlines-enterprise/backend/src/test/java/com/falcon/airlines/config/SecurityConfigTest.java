@@ -83,13 +83,13 @@ class SecurityConfigTest {
 
     @Test
     void protectedEndpointRejectsAnonymous() throws Exception {
-        mockMvc.perform(get("/api/flights"))
+        mockMvc.perform(get("/api/security-test"))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     void protectedEndpointAllowsAuthenticatedUser() throws Exception {
-        mockMvc.perform(get("/api/flights")
+        mockMvc.perform(get("/api/security-test")
                         .with(user("alice").roles("USER")))
                 .andExpect(status().isOk());
     }
@@ -97,7 +97,7 @@ class SecurityConfigTest {
     @Test
     @WithMockUser(roles = "ADMIN")
     void protectedEndpointAllowsMockAdmin() throws Exception {
-        mockMvc.perform(get("/api/flights"))
+        mockMvc.perform(get("/api/security-test"))
                 .andExpect(status().isOk());
     }
 
