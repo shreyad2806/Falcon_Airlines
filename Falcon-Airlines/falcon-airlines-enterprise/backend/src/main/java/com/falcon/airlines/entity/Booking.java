@@ -44,4 +44,8 @@ public class Booking extends AuditEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_status", length = 20, nullable = false)
     private BookingPaymentStatus paymentStatus;
+
+    @Version
+    @Column(name = "version", nullable = false)
+    private Long version;
 }

@@ -47,4 +47,8 @@ public class Ticket extends AuditEntity {
 
     @Column(name = "issued_at", nullable = false)
     private Instant issuedAt;
+
+    @Version
+    @Column(name = "version", nullable = false)
+    private Long version;
 }
