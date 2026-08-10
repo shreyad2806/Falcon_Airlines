@@ -24,4 +24,6 @@ public class PassengerResponse {
     private String redressNumber;
     private Instant createdAt;
     private Instant updatedAt;
+    private Integer ticketCount;
+    private Integer bookingCount;
 }
