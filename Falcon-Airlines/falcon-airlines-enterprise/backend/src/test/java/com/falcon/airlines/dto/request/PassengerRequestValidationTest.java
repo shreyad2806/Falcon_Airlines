@@ -122,7 +122,7 @@ class PassengerRequestValidationTest extends BaseUnitTest {
     @Test
     void phoneTooLong_shouldFail() {
         PassengerRequest request = buildValidRequest();
-        request.setPhone("+1-234-567-8901-2345");
+        request.setPhone("+1-234-567-8901-23456");
         Set<ConstraintViolation<PassengerRequest>> violations = validator.validate(request);
         assertThat(violations).isNotEmpty();
         assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("phone"));

@@ -117,7 +117,8 @@ class PassengerRepositoryIntegrationTest extends BaseIntegrationTest {
         Passenger passenger = buildPassenger("David", "Miller", "david@example.com", "KL5432109");
         passengerRepository.save(passenger);
 
-        boolean exists = passengerRepository.existsByUserId(null);
+        // Test with a non-existent user ID
+        boolean exists = passengerRepository.existsByUserId(999999L);
         assertThat(exists).isFalse();
     }
 
@@ -238,5 +239,18 @@ class PassengerRepositoryIntegrationTest extends BaseIntegrationTest {
         assertThat(found).isPresent();
         assertThat(found.get().getFirstName()).isEqualTo("Updated");
         assertThat(found.get().getEmail()).isEqualTo("updated@example.com");
+    }
+
+    @Test
+    void duplicatePassportNumber_rejectedByDatabase() {
+        String passportNumber = "DP1234567";
+        
+        Passenger passenger1 = buildPassenger("Duplicate", "Passport1", "dup1@example.com", passportNumber);
+        passengerRepository.save(passenger1);
+
+        Passenger passenger2 = buildPassenger("Duplicate", "Passport2", "dup2@example.com", passportNumber);
+        
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> passengerRepository.save(passenger2))
+                .isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class);
     }
 }
