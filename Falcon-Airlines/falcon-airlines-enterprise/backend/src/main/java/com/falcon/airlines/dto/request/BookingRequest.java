@@ -1,41 +1,40 @@
 package com.falcon.airlines.dto.request;
 
-import com.falcon.airlines.enums.BookingPaymentStatus;
-import com.falcon.airlines.enums.BookingStatus;
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.PositiveOrZero;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Positive;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.math.BigDecimal;
-import java.time.Instant;
+import java.util.List;
 
 @Getter
 @Setter
 public class BookingRequest {
 
-    @NotBlank
-    @Size(min = 6, max = 10)
-    private String bookingReference;
-
     @NotNull
     private Long customerId;
 
     @NotNull
-    private BookingStatus status;
+    private Long flightId;
 
-    @NotNull
-    @PositiveOrZero
-    private BigDecimal totalAmount;
+    @NotEmpty(message = "At least one passenger must be provided")
+    @Valid
+    private List<BookingPassengerRequest> passengers;
 
-    @NotBlank
-    @Size(min = 3, max = 3)
-    private String currency;
+    @NotEmpty(message = "At least one seat must be requested")
+    private List<String> requestedSeats;
 
-    @NotNull
-    private BookingPaymentStatus paymentStatus;
+    @Getter
+    @Setter
+    public static class BookingPassengerRequest {
 
-    private Instant timeLimit;
+        @NotNull(message = "Passenger ID is required")
+        private Long passengerId;
+
+        private String fareClass;
+
+        private String cabin;
+    }
 }

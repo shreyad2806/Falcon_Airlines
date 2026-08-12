@@ -7,16 +7,14 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.List;
 
 @Getter
 @Setter
-public class BookingResponse {
+public class BookingSummaryResponse {
 
     private Long id;
     private String bookingReference;
     private Long customerId;
-    private String customerUsername;
     private Long flightId;
     private String flightNumber;
     private BookingStatus status;
@@ -25,8 +23,6 @@ public class BookingResponse {
     private Instant bookingDate;
     private Instant timeLimit;
     private BookingPaymentStatus paymentStatus;
-    private Long version;
+    private Integer passengerCount;
     private Instant createdAt;
-    private Instant updatedAt;
-    private List<TicketSummaryResponse> tickets;
 }
