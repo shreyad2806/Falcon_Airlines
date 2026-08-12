@@ -397,7 +397,7 @@ public class BookingService {
     }
 
     private String generateBookingReference() {
-        return "BK" + System.currentTimeMillis() + (int)(Math.random() * 1000);
+        return "BK" + String.format("%08d", (int)(Math.random() * 100000000));
     }
 
     private String generateTicketNumber() {
