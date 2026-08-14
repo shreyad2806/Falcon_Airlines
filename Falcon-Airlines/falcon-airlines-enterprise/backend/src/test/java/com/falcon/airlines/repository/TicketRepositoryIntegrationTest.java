@@ -7,6 +7,8 @@ import com.falcon.airlines.entity.Passenger;
 import com.falcon.airlines.entity.Ticket;
 import com.falcon.airlines.entity.User;
 import com.falcon.airlines.entity.Airport;
+import com.falcon.airlines.entity.Aircraft;
+import com.falcon.airlines.entity.Seat;
 import com.falcon.airlines.enums.BookingStatus;
 import com.falcon.airlines.enums.BookingPaymentStatus;
 import com.falcon.airlines.enums.TicketStatus;
@@ -42,10 +44,16 @@ class TicketRepositoryIntegrationTest extends BaseIntegrationTest {
     private UserRepository userRepository;
 
     @Autowired
+    private AirportRepository airportRepository;
+
+    @Autowired
+    private AircraftRepository aircraftRepository;
+
+    @Autowired
     private SeatAllocationRepository seatAllocationRepository;
 
     @Autowired
-    private AirportRepository airportRepository;
+    private SeatRepository seatRepository;
 
     @Test
     void saveAndFindTicket() {
@@ -155,10 +163,22 @@ class TicketRepositoryIntegrationTest extends BaseIntegrationTest {
         Ticket ticket = createTicket(booking, passenger, flight);
         ticketRepository.save(ticket);
 
+        // Create a seat for the allocation
+        com.falcon.airlines.entity.Seat seat = new com.falcon.airlines.entity.Seat();
+        seat.setAircraft(flight.getAircraft());
+        seat.setSeatNumber("1A");
+        seat.setSeatClass("ECONOMY");
+        seat.setRowNumber((short) 1);
+        seat.setColumnLetter("A");
+        seat.setIsActive(true);
+        seat = seatRepository.save(seat);
+
         // Create a seat allocation for this ticket
         com.falcon.airlines.entity.SeatAllocation allocation = new com.falcon.airlines.entity.SeatAllocation();
         allocation.setTicket(ticket);
         allocation.setFlight(flight);
+        allocation.setSeat(seat);
+        allocation.setAllocatedAt(java.time.Instant.now());
         seatAllocationRepository.save(allocation);
 
         Optional<com.falcon.airlines.entity.SeatAllocation> found = ticketRepository.findSeatAllocationByTicketId(ticket.getId());
@@ -195,6 +215,7 @@ class TicketRepositoryIntegrationTest extends BaseIntegrationTest {
         
         saved.setStatus(TicketStatus.VOID);
         Ticket updated = ticketRepository.save(saved);
+        ticketRepository.flush();
         
         assertThat(updated.getVersion()).isGreaterThan(initialVersion);
     }
@@ -205,6 +226,8 @@ class TicketRepositoryIntegrationTest extends BaseIntegrationTest {
         customer.setEmail("cust_test@example.com");
         customer.setPasswordHash("hashed_password");
         customer.setStatus(UserStatus.ACTIVE);
+        customer.setMfaEnabled(false);
+        customer.setEmailVerified(false);
         User savedCustomer = userRepository.save(customer);
 
         Booking booking = new Booking();
@@ -235,24 +258,39 @@ class TicketRepositoryIntegrationTest extends BaseIntegrationTest {
         Airport origin = createAirport("JFK", "John F. Kennedy International");
         Airport destination = createAirport("LAX", "Los Angeles International");
         
+        Aircraft aircraft = new Aircraft();
+        aircraft.setRegistrationNumber("REG001");
+        aircraft.setType("COMMERCIAL");
+        aircraft.setModel("Boeing 737");
+        aircraft.setManufacturer("Boeing");
+        aircraft.setTotalCapacity((short) 150);
+        aircraft = aircraftRepository.save(aircraft);
+        
         Flight flight = new Flight();
         flight.setFlightNumber("FL001");
         flight.setOriginAirport(origin);
         flight.setDestinationAirport(destination);
+        flight.setAircraft(aircraft);
         flight.setScheduledDeparture(Instant.now().plusSeconds(3600));
         flight.setScheduledArrival(Instant.now().plusSeconds(7200));
+        flight.setStatus(com.falcon.airlines.enums.FlightStatus.SCHEDULED);
+        flight.setIsActive(true);
         return flightRepository.save(flight);
     }
 
     private Airport createAirport(String iataCode, String name) {
-        Airport airport = new Airport();
-        airport.setIataCode(iataCode);
-        airport.setName(name);
-        airport.setCity("Test City");
-        airport.setCountry("US");
-        airport.setTimeZone("UTC");
-        airport.setIsActive(true);
-        return airportRepository.save(airport);
+        return airportRepository.findByIataCode(iataCode)
+            .orElseGet(() -> {
+                Airport airport = new Airport();
+                airport.setIataCode(iataCode);
+                airport.setIcaoCode("K" + iataCode);
+                airport.setName(name);
+                airport.setCity("Test City");
+                airport.setCountry("US");
+                airport.setTimeZone("UTC");
+                airport.setIsActive(true);
+                return airportRepository.save(airport);
+            });
     }
 
     private Ticket createTicket(Booking booking, Passenger passenger, Flight flight) {

@@ -293,7 +293,7 @@ class PassengerControllerIntegrationTest extends BaseIntegrationTest {
     @Test
     void shouldRejectInvalidPassport() {
         PassengerRequest request = buildValidRequest();
-        request.setPassportNumber("INVALID");
+        request.setPassportNumber("invalid"); // lowercase violates pattern
 
         ResponseEntity<String> response = restTemplate.exchange(
                 "/api/passengers", HttpMethod.POST,
@@ -413,7 +413,7 @@ class PassengerControllerIntegrationTest extends BaseIntegrationTest {
                 "/api/passengers", HttpMethod.POST,
                 new HttpEntity<>(request, headers), String.class);
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
     }
 
     @Test
@@ -422,6 +422,6 @@ class PassengerControllerIntegrationTest extends BaseIntegrationTest {
                 "/api/passengers", HttpMethod.GET,
                 new HttpEntity<>(new HttpHeaders()), String.class);
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
     }
 }

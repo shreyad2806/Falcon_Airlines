@@ -3,10 +3,14 @@ package com.falcon.airlines.repository;
 import com.falcon.airlines.common.BaseIntegrationTest;
 import com.falcon.airlines.entity.Aircraft;
 import com.falcon.airlines.entity.Airport;
+import com.falcon.airlines.entity.Booking;
 import com.falcon.airlines.entity.Flight;
+import com.falcon.airlines.entity.Passenger;
 import com.falcon.airlines.entity.Seat;
 import com.falcon.airlines.entity.SeatAllocation;
 import com.falcon.airlines.entity.Ticket;
+import com.falcon.airlines.entity.User;
+import com.falcon.airlines.enums.TicketStatus;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,6 +40,15 @@ class SeatRepositoryIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
     private AirportRepository airportRepository;
+
+    @Autowired
+    private BookingRepository bookingRepository;
+
+    @Autowired
+    private PassengerRepository passengerRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Test
     void saveAndFindSeat() {
@@ -106,6 +119,7 @@ class SeatRepositoryIntegrationTest extends BaseIntegrationTest {
         allocation.setSeat(seat1);
         allocation.setTicket(ticket);
         allocation.setFlight(flight);
+        allocation.setAllocatedAt(java.time.Instant.now());
         seatAllocationRepository.save(allocation);
 
         List<Seat> available = seatRepository.findAvailableSeatsForFlight(aircraft.getId(), flight.getId());
@@ -126,6 +140,7 @@ class SeatRepositoryIntegrationTest extends BaseIntegrationTest {
         allocation.setSeat(seat);
         allocation.setTicket(ticket);
         allocation.setFlight(flight);
+        allocation.setAllocatedAt(java.time.Instant.now());
         seatAllocationRepository.save(allocation);
 
         boolean isAllocated = seatRepository.isSeatAllocatedForFlight(seat.getId(), flight.getId());
@@ -146,7 +161,7 @@ class SeatRepositoryIntegrationTest extends BaseIntegrationTest {
 
     private Aircraft createAircraft() {
         Aircraft aircraft = new Aircraft();
-        aircraft.setRegistrationNumber("TEST001");
+        aircraft.setRegistrationNumber("TEST" + System.currentTimeMillis());
         aircraft.setType("BOEING");
         aircraft.setModel("737-800");
         aircraft.setManufacturer("Boeing");
@@ -165,18 +180,24 @@ class SeatRepositoryIntegrationTest extends BaseIntegrationTest {
         flight.setAircraft(aircraft);
         flight.setScheduledDeparture(java.time.Instant.now().plusSeconds(3600));
         flight.setScheduledArrival(java.time.Instant.now().plusSeconds(7200));
+        flight.setStatus(com.falcon.airlines.enums.FlightStatus.SCHEDULED);
+        flight.setIsActive(true);
         return flightRepository.save(flight);
     }
 
     private Airport createAirport(String iataCode, String name) {
-        Airport airport = new Airport();
-        airport.setIataCode(iataCode);
-        airport.setName(name);
-        airport.setCity("Test City");
-        airport.setCountry("US");
-        airport.setTimeZone("UTC");
-        airport.setIsActive(true);
-        return airportRepository.save(airport);
+        return airportRepository.findByIataCode(iataCode)
+            .orElseGet(() -> {
+                Airport airport = new Airport();
+                airport.setIataCode(iataCode);
+                airport.setIcaoCode("K" + iataCode);
+                airport.setName(name);
+                airport.setCity("Test City");
+                airport.setCountry("US");
+                airport.setTimeZone("UTC");
+                airport.setIsActive(true);
+                return airportRepository.save(airport);
+            });
     }
 
     private Seat createSeat(Aircraft aircraft, String seatNumber, String seatClass) {
@@ -190,11 +211,56 @@ class SeatRepositoryIntegrationTest extends BaseIntegrationTest {
         return seat;
     }
 
+    private Booking createBooking() {
+        com.falcon.airlines.entity.User customer = new com.falcon.airlines.entity.User();
+        customer.setUsername("cust_test_" + System.currentTimeMillis());
+        customer.setEmail("cust_test_" + System.currentTimeMillis() + "@example.com");
+        customer.setPasswordHash("hashed_password");
+        customer.setStatus(com.falcon.airlines.enums.UserStatus.ACTIVE);
+        customer.setMfaEnabled(false);
+        customer.setEmailVerified(false);
+        com.falcon.airlines.entity.User savedCustomer = userRepository.save(customer);
+
+        Booking booking = new Booking();
+        booking.setBookingReference("REF" + (System.currentTimeMillis() % 10000000));
+        booking.setCustomer(savedCustomer);
+        booking.setStatus(com.falcon.airlines.enums.BookingStatus.PENDING);
+        booking.setTotalAmount(java.math.BigDecimal.valueOf(100.00));
+        booking.setCurrency("USD");
+        booking.setBookingDate(java.time.Instant.now());
+        booking.setPaymentStatus(com.falcon.airlines.enums.BookingPaymentStatus.PENDING);
+        return bookingRepository.save(booking);
+    }
+
+    private Passenger createPassenger() {
+        Passenger passenger = new Passenger();
+        passenger.setFirstName("John");
+        passenger.setLastName("Doe");
+        passenger.setDateOfBirth(java.time.LocalDate.of(1990, 1, 1));
+        passenger.setEmail("john.doe_" + System.currentTimeMillis() + "@example.com");
+        passenger.setPhone("+1234567890");
+        passenger.setPassportNumber("AB" + (System.currentTimeMillis() % 10000000));
+        passenger.setNationality("USA");
+        passenger.setGender(com.falcon.airlines.enums.Gender.M);
+        return passengerRepository.save(passenger);
+    }
+
     private Ticket createTicket() {
+        Booking booking = createBooking();
+        Passenger passenger = createPassenger();
+        Aircraft aircraft = createAircraft();
+        Flight flight = createFlight(aircraft);
+        
         Ticket ticket = new Ticket();
         ticket.setTicketNumber("TKT" + System.currentTimeMillis());
+        ticket.setBooking(booking);
+        ticket.setPassenger(passenger);
+        ticket.setFlight(flight);
         ticket.setFare(java.math.BigDecimal.valueOf(100.00));
+        ticket.setFareBasis("Y");
         ticket.setTaxes(java.math.BigDecimal.valueOf(20.00));
+        ticket.setStatus(TicketStatus.ISSUED);
+        ticket.setIssuedAt(java.time.Instant.now());
         return ticketRepository.save(ticket);
     }
 }

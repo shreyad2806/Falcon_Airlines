@@ -18,7 +18,6 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.time.Instant;
@@ -27,7 +26,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@Transactional
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class FlightControllerIntegrationTest extends BaseIntegrationTest {
 
@@ -81,8 +79,8 @@ class FlightControllerIntegrationTest extends BaseIntegrationTest {
 
     @AfterAll
     void tearDown() {
-        // Remove flights created by this test class (FX-..., FA-DUP-..., FA-OVR-...) first to avoid FK issues.
-        jdbcTemplate.update("DELETE FROM flights WHERE flight_number LIKE 'FX-%' OR flight_number LIKE 'FA-DUP-%' OR flight_number LIKE 'FA-OVR-%'");
+        // Remove flights created by this test class (FX-..., FA-DUP-..., FA-OVR-..., FD-...) first to avoid FK issues.
+        jdbcTemplate.update("DELETE FROM flights WHERE flight_number LIKE 'FX-%' OR flight_number LIKE 'FA-DUP-%' OR flight_number LIKE 'FA-OVR-%' OR flight_number LIKE 'FD-%'");
         // Remove child token records before removing the user.
         jdbcTemplate.update("DELETE FROM refresh_tokens WHERE user_id = (SELECT id FROM users WHERE username = ?)", TEST_ADMIN);
         jdbcTemplate.update("DELETE FROM user_roles WHERE user_id IN (SELECT id FROM users WHERE username = ?)", TEST_ADMIN);
@@ -99,7 +97,7 @@ class FlightControllerIntegrationTest extends BaseIntegrationTest {
     private FlightRequest buildValidRequest() {
         int n = FLIGHT_COUNTER.incrementAndGet();
         long departureOffset = 86400L + (n * 100000L);
-        long arrivalOffset = 90000L + (n * 100000L);
+        long arrivalOffset = departureOffset + 3600L; // Arrival is 1 hour after departure
 
         FlightRequest request = new FlightRequest();
         request.setFlightNumber("FX-" + UUID.randomUUID().toString().substring(0, 7));
@@ -304,10 +302,21 @@ class FlightControllerIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void shouldRejectDuplicateFlight() {
-        FlightRequest request = buildValidRequest();
-        request.setFlightNumber("FA-DUP-" + UUID.randomUUID().toString().substring(0, 3));
+        // Clean up any existing flights with FD- prefix to ensure clean state
+        jdbcTemplate.update("DELETE FROM flights WHERE flight_number LIKE 'FD-%'");
+        
+        FlightRequest request = new FlightRequest();
+        String uniqueFlightNumber = "FD" + System.currentTimeMillis() % 10000000;
+        request.setFlightNumber(uniqueFlightNumber);
+        request.setOriginAirportId(1L);
+        request.setDestinationAirportId(2L);
+        request.setAircraftId(1L);
         request.setScheduledDeparture(Instant.now().plusSeconds(200000));
         request.setScheduledArrival(Instant.now().plusSeconds(210000));
+        request.setStatus(FlightStatus.SCHEDULED);
+        request.setTerminal("T1");
+        request.setGate("G1");
+        request.setIsActive(true);
 
         ResponseEntity<String> first = restTemplate.exchange(
                 "/api/flights", HttpMethod.POST,

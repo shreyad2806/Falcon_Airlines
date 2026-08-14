@@ -23,6 +23,8 @@ import com.falcon.airlines.repository.SeatAllocationRepository;
 import com.falcon.airlines.repository.SeatRepository;
 import com.falcon.airlines.repository.TicketRepository;
 import com.falcon.airlines.repository.UserRepository;
+import com.falcon.airlines.repository.AircraftRepository;
+import com.falcon.airlines.repository.AirportRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
@@ -61,6 +63,12 @@ class BookingTransactionIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private AircraftRepository aircraftRepository;
+
+    @Autowired
+    private AirportRepository airportRepository;
 
     @Test
     void successfulBookingCommitsAllChanges() {
@@ -397,38 +405,51 @@ class BookingTransactionIntegrationTest extends BaseIntegrationTest {
         user.setEmail(username + "@example.com");
         user.setPasswordHash("hashed_password");
         user.setStatus(com.falcon.airlines.enums.UserStatus.ACTIVE);
+        user.setMfaEnabled(false);
+        user.setEmailVerified(false);
         return userRepository.save(user);
     }
 
     private Aircraft createAircraft(String registration) {
         Aircraft aircraft = new Aircraft();
         aircraft.setRegistrationNumber(registration);
+        aircraft.setType("COMMERCIAL");
         aircraft.setModel("Boeing 737");
+        aircraft.setManufacturer("Boeing");
         aircraft.setTotalCapacity((short) 150);
         return aircraft;
     }
 
     private Flight createFlightWithAircraft(String flightNumber, String aircraftReg) {
         Aircraft aircraft = createAircraft(aircraftReg);
+        aircraft = aircraftRepository.save(aircraft);
         
         // Create origin and destination airports
-        com.falcon.airlines.entity.Airport origin = new com.falcon.airlines.entity.Airport();
-        origin.setIataCode("JFK");
-        origin.setIcaoCode("KJFK");
-        origin.setName("John F. Kennedy International");
-        origin.setCity("New York");
-        origin.setCountry("US");
-        origin.setTimeZone("America/New_York");
-        origin.setIsActive(true);
+        com.falcon.airlines.entity.Airport origin = airportRepository.findByIataCode("JFK")
+            .orElseGet(() -> {
+                com.falcon.airlines.entity.Airport a = new com.falcon.airlines.entity.Airport();
+                a.setIataCode("JFK");
+                a.setIcaoCode("KJFK");
+                a.setName("John F. Kennedy International");
+                a.setCity("New York");
+                a.setCountry("US");
+                a.setTimeZone("America/New_York");
+                a.setIsActive(true);
+                return airportRepository.save(a);
+            });
         
-        com.falcon.airlines.entity.Airport destination = new com.falcon.airlines.entity.Airport();
-        destination.setIataCode("LAX");
-        destination.setIcaoCode("KLAX");
-        destination.setName("Los Angeles International");
-        destination.setCity("Los Angeles");
-        destination.setCountry("US");
-        destination.setTimeZone("America/Los_Angeles");
-        destination.setIsActive(true);
+        com.falcon.airlines.entity.Airport destination = airportRepository.findByIataCode("LAX")
+            .orElseGet(() -> {
+                com.falcon.airlines.entity.Airport a = new com.falcon.airlines.entity.Airport();
+                a.setIataCode("LAX");
+                a.setIcaoCode("KLAX");
+                a.setName("Los Angeles International");
+                a.setCity("Los Angeles");
+                a.setCountry("US");
+                a.setTimeZone("America/Los_Angeles");
+                a.setIsActive(true);
+                return airportRepository.save(a);
+            });
 
         Flight flight = new Flight();
         flight.setFlightNumber(flightNumber);

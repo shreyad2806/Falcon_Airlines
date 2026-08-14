@@ -23,9 +23,10 @@ import com.falcon.airlines.repository.SeatAllocationRepository;
 import com.falcon.airlines.repository.SeatRepository;
 import com.falcon.airlines.repository.TicketRepository;
 import com.falcon.airlines.repository.UserRepository;
+import com.falcon.airlines.repository.AircraftRepository;
+import com.falcon.airlines.repository.AirportRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -40,7 +41,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@Transactional
 class BookingConcurrencyIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
@@ -66,6 +66,12 @@ class BookingConcurrencyIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private AircraftRepository aircraftRepository;
+
+    @Autowired
+    private AirportRepository airportRepository;
 
     @Test
     void twoUsersAttemptSameSeatSimultaneously() throws Exception {
@@ -160,8 +166,8 @@ class BookingConcurrencyIntegrationTest extends BaseIntegrationTest {
         Optional<SeatAllocation> allocation = seatAllocationRepository.findBySeatIdAndFlightId(seat1.getId(), flight.getId());
         assertThat(allocation).isPresent();
         
-        Ticket winningTicket = allocation.get().getTicket();
-        Booking winningBooking = winningTicket.getBooking();
+        Ticket winningTicket = ticketRepository.findById(allocation.get().getTicket().getId()).orElseThrow();
+        Booking winningBooking = bookingRepository.findById(winningTicket.getBooking().getId()).orElseThrow();
         
         // Verify the winning booking belongs to one of the customers
         assertThat(winningBooking.getCustomer().getId()).isIn(customer1.getId(), customer2.getId());
@@ -170,7 +176,9 @@ class BookingConcurrencyIntegrationTest extends BaseIntegrationTest {
         List<SeatAllocation> allAllocations = seatAllocationRepository.findAll();
         long allocationsForSeat = allAllocations.stream()
                 .filter(sa -> sa.getSeat().getId().equals(seat1.getId()))
-                .filter(sa -> sa.getTicket().getFlight().getId().equals(flight.getId()))
+                .filter(sa -> ticketRepository.findById(sa.getTicket().getId())
+                        .map(t -> t.getFlight().getId().equals(flight.getId()))
+                        .orElse(false))
                 .count();
         assertThat(allocationsForSeat).isEqualTo(1);
 
@@ -482,37 +490,50 @@ class BookingConcurrencyIntegrationTest extends BaseIntegrationTest {
         user.setEmail(username + "@example.com");
         user.setPasswordHash("hashed_password");
         user.setStatus(com.falcon.airlines.enums.UserStatus.ACTIVE);
+        user.setMfaEnabled(false);
+        user.setEmailVerified(false);
         return userRepository.save(user);
     }
 
     private Aircraft createAircraft(String registration) {
         Aircraft aircraft = new Aircraft();
         aircraft.setRegistrationNumber(registration);
+        aircraft.setType("COMMERCIAL");
         aircraft.setModel("Boeing 737");
+        aircraft.setManufacturer("Boeing");
         aircraft.setTotalCapacity((short) 150);
         return aircraft;
     }
 
     private Flight createFlightWithAircraft(String flightNumber, String aircraftReg) {
         Aircraft aircraft = createAircraft(aircraftReg);
+        aircraft = aircraftRepository.save(aircraft);
         
-        com.falcon.airlines.entity.Airport origin = new com.falcon.airlines.entity.Airport();
-        origin.setIataCode("JFK");
-        origin.setIcaoCode("KJFK");
-        origin.setName("John F. Kennedy International");
-        origin.setCity("New York");
-        origin.setCountry("US");
-        origin.setTimeZone("America/New_York");
-        origin.setIsActive(true);
+        com.falcon.airlines.entity.Airport origin = airportRepository.findByIataCode("JFK")
+            .orElseGet(() -> {
+                com.falcon.airlines.entity.Airport a = new com.falcon.airlines.entity.Airport();
+                a.setIataCode("JFK");
+                a.setIcaoCode("KJFK");
+                a.setName("John F. Kennedy International");
+                a.setCity("New York");
+                a.setCountry("US");
+                a.setTimeZone("America/New_York");
+                a.setIsActive(true);
+                return airportRepository.save(a);
+            });
         
-        com.falcon.airlines.entity.Airport destination = new com.falcon.airlines.entity.Airport();
-        destination.setIataCode("LAX");
-        destination.setIcaoCode("KLAX");
-        destination.setName("Los Angeles International");
-        destination.setCity("Los Angeles");
-        destination.setCountry("US");
-        destination.setTimeZone("America/Los_Angeles");
-        destination.setIsActive(true);
+        com.falcon.airlines.entity.Airport destination = airportRepository.findByIataCode("LAX")
+            .orElseGet(() -> {
+                com.falcon.airlines.entity.Airport a = new com.falcon.airlines.entity.Airport();
+                a.setIataCode("LAX");
+                a.setIcaoCode("KLAX");
+                a.setName("Los Angeles International");
+                a.setCity("Los Angeles");
+                a.setCountry("US");
+                a.setTimeZone("America/Los_Angeles");
+                a.setIsActive(true);
+                return airportRepository.save(a);
+            });
 
         Flight flight = new Flight();
         flight.setFlightNumber(flightNumber);

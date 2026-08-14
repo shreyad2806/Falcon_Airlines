@@ -137,6 +137,7 @@ class BookingRepositoryIntegrationTest extends BaseIntegrationTest {
         
         saved.setStatus(BookingStatus.CONFIRMED);
         Booking updated = bookingRepository.save(saved);
+        bookingRepository.flush();
         
         assertThat(updated.getVersion()).isGreaterThan(initialVersion);
     }
@@ -147,6 +148,8 @@ class BookingRepositoryIntegrationTest extends BaseIntegrationTest {
         user.setEmail("cust_test@example.com");
         user.setPasswordHash("hashed_password");
         user.setStatus(UserStatus.ACTIVE);
+        user.setMfaEnabled(false);
+        user.setEmailVerified(false);
         return userRepository.save(user);
     }
 

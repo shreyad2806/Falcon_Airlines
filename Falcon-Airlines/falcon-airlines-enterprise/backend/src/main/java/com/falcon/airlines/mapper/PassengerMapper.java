@@ -10,7 +10,7 @@ import org.mapstruct.ReportingPolicy;
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface PassengerMapper {
 
-    @Mapping(target = "user.id", source = "userId")
+    @Mapping(target = "user", ignore = true)
     Passenger toEntity(PassengerRequest dto);
 
     @Mapping(target = "userId", source = "user.id")

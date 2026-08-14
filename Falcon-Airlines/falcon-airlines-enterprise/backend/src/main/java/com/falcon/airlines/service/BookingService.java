@@ -18,6 +18,8 @@ import com.falcon.airlines.enums.BookingStatus;
 import com.falcon.airlines.enums.FlightStatus;
 import com.falcon.airlines.enums.TicketStatus;
 import com.falcon.airlines.exception.BaseException;
+import jakarta.persistence.OptimisticLockException;
+import org.springframework.dao.DataIntegrityViolationException;
 import com.falcon.airlines.repository.BookingRepository;
 import com.falcon.airlines.repository.FlightRepository;
 import com.falcon.airlines.repository.PassengerRepository;
@@ -138,7 +140,12 @@ public class BookingService {
             allocation.setFlight(flight);
             allocation.setAllocatedAt(Instant.now());
 
-            seatAllocationRepository.save(allocation);
+            try {
+                seatAllocationRepository.save(allocation);
+            } catch (DataIntegrityViolationException e) {
+                throw new BaseException("Seat " + seat.getSeatNumber() + " is already allocated on this flight", 
+                        HttpStatus.CONFLICT, "SEAT_ALREADY_ALLOCATED");
+            }
 
             index++;
         }
