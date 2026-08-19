@@ -429,4 +429,302 @@ class TicketServiceTest extends BaseUnitTest {
                 .hasFieldOrPropertyWithValue("status", HttpStatus.UNAUTHORIZED)
                 .hasFieldOrPropertyWithValue("errorCode", "AUTHENTICATION_REQUIRED");
     }
+
+    // Ticket Status Transition Tests
+
+    @Test
+    void updateTicketStatus_activeToCancelled_success() {
+        setupSecurityContext("customer", "CUSTOMER");
+        User user = buildUser("customer");
+        Booking booking = buildBooking(1L, user);
+        Passenger passenger = buildPassenger(1L);
+        Flight flight = buildFlight(1L);
+        Ticket ticket = buildTicket(1L, booking, passenger, flight);
+        ticket.setStatus(TicketStatus.ACTIVE);
+
+        when(ticketRepository.findById(1L)).thenReturn(Optional.of(ticket));
+        when(ticketRepository.save(any(Ticket.class))).thenReturn(ticket);
+        when(seatAllocationRepository.findByTicketId(1L)).thenReturn(Optional.empty());
+
+        TicketDetailResponse response = ticketService.updateTicketStatus(1L, TicketStatus.CANCELLED);
+
+        assertThat(response).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(TicketStatus.CANCELLED);
+
+        clearSecurityContext();
+    }
+
+    @Test
+    void updateTicketStatus_activeToRefunded_success() {
+        setupSecurityContext("customer", "CUSTOMER");
+        User user = buildUser("customer");
+        Booking booking = buildBooking(1L, user);
+        Passenger passenger = buildPassenger(1L);
+        Flight flight = buildFlight(1L);
+        Ticket ticket = buildTicket(1L, booking, passenger, flight);
+        ticket.setStatus(TicketStatus.ACTIVE);
+
+        when(ticketRepository.findById(1L)).thenReturn(Optional.of(ticket));
+        when(ticketRepository.save(any(Ticket.class))).thenReturn(ticket);
+        when(seatAllocationRepository.findByTicketId(1L)).thenReturn(Optional.empty());
+
+        TicketDetailResponse response = ticketService.updateTicketStatus(1L, TicketStatus.REFUNDED);
+
+        assertThat(response).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(TicketStatus.REFUNDED);
+
+        clearSecurityContext();
+    }
+
+    @Test
+    void updateTicketStatus_activeToUsed_success() {
+        setupSecurityContext("customer", "CUSTOMER");
+        User user = buildUser("customer");
+        Booking booking = buildBooking(1L, user);
+        Passenger passenger = buildPassenger(1L);
+        Flight flight = buildFlight(1L);
+        Ticket ticket = buildTicket(1L, booking, passenger, flight);
+        ticket.setStatus(TicketStatus.ACTIVE);
+
+        when(ticketRepository.findById(1L)).thenReturn(Optional.of(ticket));
+        when(ticketRepository.save(any(Ticket.class))).thenReturn(ticket);
+        when(seatAllocationRepository.findByTicketId(1L)).thenReturn(Optional.empty());
+
+        TicketDetailResponse response = ticketService.updateTicketStatus(1L, TicketStatus.USED);
+
+        assertThat(response).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(TicketStatus.USED);
+
+        clearSecurityContext();
+    }
+
+    @Test
+    void updateTicketStatus_refundedToCancelled_success() {
+        setupSecurityContext("customer", "CUSTOMER");
+        User user = buildUser("customer");
+        Booking booking = buildBooking(1L, user);
+        Passenger passenger = buildPassenger(1L);
+        Flight flight = buildFlight(1L);
+        Ticket ticket = buildTicket(1L, booking, passenger, flight);
+        ticket.setStatus(TicketStatus.REFUNDED);
+
+        when(ticketRepository.findById(1L)).thenReturn(Optional.of(ticket));
+        when(ticketRepository.save(any(Ticket.class))).thenReturn(ticket);
+        when(seatAllocationRepository.findByTicketId(1L)).thenReturn(Optional.empty());
+
+        TicketDetailResponse response = ticketService.updateTicketStatus(1L, TicketStatus.CANCELLED);
+
+        assertThat(response).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(TicketStatus.CANCELLED);
+
+        clearSecurityContext();
+    }
+
+    @Test
+    void updateTicketStatus_cancelledToActive_invalid() {
+        setupSecurityContext("customer", "CUSTOMER");
+        User user = buildUser("customer");
+        Booking booking = buildBooking(1L, user);
+        Passenger passenger = buildPassenger(1L);
+        Flight flight = buildFlight(1L);
+        Ticket ticket = buildTicket(1L, booking, passenger, flight);
+        ticket.setStatus(TicketStatus.CANCELLED);
+
+        when(ticketRepository.findById(1L)).thenReturn(Optional.of(ticket));
+
+        assertThatThrownBy(() -> ticketService.updateTicketStatus(1L, TicketStatus.ACTIVE))
+                .isInstanceOf(BaseException.class)
+                .hasFieldOrPropertyWithValue("status", HttpStatus.BAD_REQUEST)
+                .hasFieldOrPropertyWithValue("errorCode", "TICKET_ALREADY_CANCELLED");
+
+        clearSecurityContext();
+    }
+
+    @Test
+    void updateTicketStatus_usedToActive_invalid() {
+        setupSecurityContext("customer", "CUSTOMER");
+        User user = buildUser("customer");
+        Booking booking = buildBooking(1L, user);
+        Passenger passenger = buildPassenger(1L);
+        Flight flight = buildFlight(1L);
+        Ticket ticket = buildTicket(1L, booking, passenger, flight);
+        ticket.setStatus(TicketStatus.USED);
+
+        when(ticketRepository.findById(1L)).thenReturn(Optional.of(ticket));
+
+        assertThatThrownBy(() -> ticketService.updateTicketStatus(1L, TicketStatus.ACTIVE))
+                .isInstanceOf(BaseException.class)
+                .hasFieldOrPropertyWithValue("status", HttpStatus.BAD_REQUEST)
+                .hasFieldOrPropertyWithValue("errorCode", "TICKET_ALREADY_USED");
+
+        clearSecurityContext();
+    }
+
+    @Test
+    void updateTicketStatus_refundedToActive_invalid() {
+        setupSecurityContext("customer", "CUSTOMER");
+        User user = buildUser("customer");
+        Booking booking = buildBooking(1L, user);
+        Passenger passenger = buildPassenger(1L);
+        Flight flight = buildFlight(1L);
+        Ticket ticket = buildTicket(1L, booking, passenger, flight);
+        ticket.setStatus(TicketStatus.REFUNDED);
+
+        when(ticketRepository.findById(1L)).thenReturn(Optional.of(ticket));
+
+        assertThatThrownBy(() -> ticketService.updateTicketStatus(1L, TicketStatus.ACTIVE))
+                .isInstanceOf(BaseException.class)
+                .hasFieldOrPropertyWithValue("status", HttpStatus.BAD_REQUEST)
+                .hasFieldOrPropertyWithValue("errorCode", "INVALID_STATUS_TRANSITION");
+
+        clearSecurityContext();
+    }
+
+    @Test
+    void updateTicketStatus_refundedToUsed_invalid() {
+        setupSecurityContext("customer", "CUSTOMER");
+        User user = buildUser("customer");
+        Booking booking = buildBooking(1L, user);
+        Passenger passenger = buildPassenger(1L);
+        Flight flight = buildFlight(1L);
+        Ticket ticket = buildTicket(1L, booking, passenger, flight);
+        ticket.setStatus(TicketStatus.REFUNDED);
+
+        when(ticketRepository.findById(1L)).thenReturn(Optional.of(ticket));
+
+        assertThatThrownBy(() -> ticketService.updateTicketStatus(1L, TicketStatus.USED))
+                .isInstanceOf(BaseException.class)
+                .hasFieldOrPropertyWithValue("status", HttpStatus.BAD_REQUEST)
+                .hasFieldOrPropertyWithValue("errorCode", "INVALID_STATUS_TRANSITION");
+
+        clearSecurityContext();
+    }
+
+    @Test
+    void cancelTicket_success() {
+        setupSecurityContext("customer", "CUSTOMER");
+        User user = buildUser("customer");
+        Booking booking = buildBooking(1L, user);
+        Passenger passenger = buildPassenger(1L);
+        Flight flight = buildFlight(1L);
+        Ticket ticket = buildTicket(1L, booking, passenger, flight);
+        ticket.setStatus(TicketStatus.ACTIVE);
+
+        when(ticketRepository.findById(1L)).thenReturn(Optional.of(ticket));
+        when(ticketRepository.save(any(Ticket.class))).thenReturn(ticket);
+        when(seatAllocationRepository.findByTicketId(1L)).thenReturn(Optional.empty());
+
+        TicketDetailResponse response = ticketService.cancelTicket(1L);
+
+        assertThat(response).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(TicketStatus.CANCELLED);
+
+        clearSecurityContext();
+    }
+
+    @Test
+    void refundTicket_success() {
+        setupSecurityContext("customer", "CUSTOMER");
+        User user = buildUser("customer");
+        Booking booking = buildBooking(1L, user);
+        Passenger passenger = buildPassenger(1L);
+        Flight flight = buildFlight(1L);
+        Ticket ticket = buildTicket(1L, booking, passenger, flight);
+        ticket.setStatus(TicketStatus.ACTIVE);
+
+        when(ticketRepository.findById(1L)).thenReturn(Optional.of(ticket));
+        when(ticketRepository.save(any(Ticket.class))).thenReturn(ticket);
+        when(seatAllocationRepository.findByTicketId(1L)).thenReturn(Optional.empty());
+
+        TicketDetailResponse response = ticketService.refundTicket(1L);
+
+        assertThat(response).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(TicketStatus.REFUNDED);
+
+        clearSecurityContext();
+    }
+
+    @Test
+    void markTicketAsUsed_success() {
+        setupSecurityContext("customer", "CUSTOMER");
+        User user = buildUser("customer");
+        Booking booking = buildBooking(1L, user);
+        Passenger passenger = buildPassenger(1L);
+        Flight flight = buildFlight(1L);
+        Ticket ticket = buildTicket(1L, booking, passenger, flight);
+        ticket.setStatus(TicketStatus.ACTIVE);
+
+        when(ticketRepository.findById(1L)).thenReturn(Optional.of(ticket));
+        when(ticketRepository.save(any(Ticket.class))).thenReturn(ticket);
+        when(seatAllocationRepository.findByTicketId(1L)).thenReturn(Optional.empty());
+
+        TicketDetailResponse response = ticketService.markTicketAsUsed(1L);
+
+        assertThat(response).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(TicketStatus.USED);
+
+        clearSecurityContext();
+    }
+
+    @Test
+    void updateTicketStatus_unauthorized() {
+        setupSecurityContext("otheruser", "CUSTOMER");
+        User user = buildUser("customer");
+        Booking booking = buildBooking(1L, user);
+        Passenger passenger = buildPassenger(1L);
+        Flight flight = buildFlight(1L);
+        Ticket ticket = buildTicket(1L, booking, passenger, flight);
+        ticket.setStatus(TicketStatus.ACTIVE);
+
+        when(ticketRepository.findById(1L)).thenReturn(Optional.of(ticket));
+
+        assertThatThrownBy(() -> ticketService.updateTicketStatus(1L, TicketStatus.CANCELLED))
+                .isInstanceOf(BaseException.class)
+                .hasFieldOrPropertyWithValue("status", HttpStatus.FORBIDDEN)
+                .hasFieldOrPropertyWithValue("errorCode", "TICKET_ACCESS_DENIED");
+
+        clearSecurityContext();
+    }
+
+    @Test
+    void updateTicketStatus_legacyIssuedToCancelled_success() {
+        setupSecurityContext("customer", "CUSTOMER");
+        User user = buildUser("customer");
+        Booking booking = buildBooking(1L, user);
+        Passenger passenger = buildPassenger(1L);
+        Flight flight = buildFlight(1L);
+        Ticket ticket = buildTicket(1L, booking, passenger, flight);
+        ticket.setStatus(TicketStatus.ISSUED); // Legacy status
+
+        when(ticketRepository.findById(1L)).thenReturn(Optional.of(ticket));
+        when(ticketRepository.save(any(Ticket.class))).thenReturn(ticket);
+        when(seatAllocationRepository.findByTicketId(1L)).thenReturn(Optional.empty());
+
+        TicketDetailResponse response = ticketService.updateTicketStatus(1L, TicketStatus.CANCELLED);
+
+        assertThat(response).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(TicketStatus.CANCELLED);
+
+        clearSecurityContext();
+    }
+
+    @Test
+    void updateTicketStatus_legacyVoidToActive_invalid() {
+        setupSecurityContext("customer", "CUSTOMER");
+        User user = buildUser("customer");
+        Booking booking = buildBooking(1L, user);
+        Passenger passenger = buildPassenger(1L);
+        Flight flight = buildFlight(1L);
+        Ticket ticket = buildTicket(1L, booking, passenger, flight);
+        ticket.setStatus(TicketStatus.VOID); // Legacy status
+
+        when(ticketRepository.findById(1L)).thenReturn(Optional.of(ticket));
+
+        assertThatThrownBy(() -> ticketService.updateTicketStatus(1L, TicketStatus.ACTIVE))
+                .isInstanceOf(BaseException.class)
+                .hasFieldOrPropertyWithValue("status", HttpStatus.BAD_REQUEST)
+                .hasFieldOrPropertyWithValue("errorCode", "TICKET_ALREADY_CANCELLED");
+
+        clearSecurityContext();
+    }
 }

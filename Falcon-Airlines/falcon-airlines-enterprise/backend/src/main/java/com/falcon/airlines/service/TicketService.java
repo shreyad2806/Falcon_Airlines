@@ -121,7 +121,7 @@ public class TicketService {
         // Check if there are existing non-void tickets for this booking
         List<Ticket> existingTickets = ticketRepository.findByBookingId(bookingId);
         boolean hasActiveTickets = existingTickets.stream()
-                .anyMatch(t -> t.getStatus() == TicketStatus.ISSUED);
+                .anyMatch(t -> t.getStatus() == TicketStatus.ISSUED || t.getStatus() == TicketStatus.ACTIVE);
 
         if (hasActiveTickets) {
             throw new BaseException("Active tickets already exist for this booking. Cannot regenerate.", 
@@ -132,6 +132,134 @@ public class TicketService {
         // For now, this is a placeholder - the actual ticket generation happens during booking creation
         throw new BaseException("Ticket regeneration not yet implemented. Tickets are generated during booking creation.", 
                 HttpStatus.NOT_IMPLEMENTED, "TICKET_REGENERATION_NOT_IMPLEMENTED");
+    }
+
+    /**
+     * Update ticket status with validation
+     * 
+     * Valid transitions:
+     * - ACTIVE → CANCELLED
+     * - ACTIVE → REFUNDED
+     * - ACTIVE → USED
+     * - REFUNDED → CANCELLED
+     * 
+     * Invalid transitions:
+     * - CANCELLED → any other state (terminal state)
+     * - USED → any other state (terminal state)
+     * - REFUNDED → ACTIVE (cannot reactivate refunded ticket)
+     * - REFUNDED → USED (cannot use refunded ticket)
+     */
+    @Transactional
+    public TicketDetailResponse updateTicketStatus(Long ticketId, TicketStatus newStatus) {
+        log.info("Updating ticket status: ticketId={}, newStatus={}", ticketId, newStatus);
+
+        Ticket ticket = ticketRepository.findById(ticketId)
+                .orElseThrow(() -> new BaseException("Ticket not found", HttpStatus.NOT_FOUND, "TICKET_NOT_FOUND"));
+
+        // Authorization check: user can only update their own tickets
+        checkTicketAccessAuthorization(ticket);
+
+        // Validate status transition
+        validateStatusTransition(ticket.getStatus(), newStatus);
+
+        // Update status
+        TicketStatus previousStatus = ticket.getStatus();
+        ticket.setStatus(newStatus);
+        Ticket updated = ticketRepository.save(ticket);
+
+        log.info("Ticket status updated successfully: ticketId={}, previousStatus={}, newStatus={}", 
+                ticketId, previousStatus, newStatus);
+
+        return mapToTicketDetailResponse(updated);
+    }
+
+    /**
+     * Cancel a ticket (sets status to CANCELLED)
+     * This is a convenience method for the common case of cancelling a ticket
+     */
+    @Transactional
+    public TicketDetailResponse cancelTicket(Long ticketId) {
+        log.info("Cancelling ticket: ticketId={}", ticketId);
+        return updateTicketStatus(ticketId, TicketStatus.CANCELLED);
+    }
+
+    /**
+     * Refund a ticket (sets status to REFUNDED)
+     * This is a convenience method for the common case of refunding a ticket
+     */
+    @Transactional
+    public TicketDetailResponse refundTicket(Long ticketId) {
+        log.info("Refunding ticket: ticketId={}", ticketId);
+        return updateTicketStatus(ticketId, TicketStatus.REFUNDED);
+    }
+
+    /**
+     * Mark a ticket as used (sets status to USED)
+     * This is typically called after check-in or flight completion
+     */
+    @Transactional
+    public TicketDetailResponse markTicketAsUsed(Long ticketId) {
+        log.info("Marking ticket as used: ticketId={}", ticketId);
+        return updateTicketStatus(ticketId, TicketStatus.USED);
+    }
+
+    /**
+     * Validate that a status transition is allowed according to business rules
+     */
+    private void validateStatusTransition(TicketStatus currentStatus, TicketStatus newStatus) {
+        // Handle legacy states by mapping them to new states
+        TicketStatus normalizedCurrent = normalizeLegacyStatus(currentStatus);
+        TicketStatus normalizedNew = normalizeLegacyStatus(newStatus);
+
+        // Same status - no change needed
+        if (normalizedCurrent == normalizedNew) {
+            return;
+        }
+
+        // Terminal states cannot transition to any other state
+        if (normalizedCurrent == TicketStatus.CANCELLED) {
+            throw new BaseException("Cannot change status of cancelled ticket", 
+                    HttpStatus.BAD_REQUEST, "TICKET_ALREADY_CANCELLED");
+        }
+
+        if (normalizedCurrent == TicketStatus.USED) {
+            throw new BaseException("Cannot change status of used ticket", 
+                    HttpStatus.BAD_REQUEST, "TICKET_ALREADY_USED");
+        }
+
+        // REFUNDED can only transition to CANCELLED
+        if (normalizedCurrent == TicketStatus.REFUNDED) {
+            if (normalizedNew != TicketStatus.CANCELLED) {
+                throw new BaseException("Refunded ticket can only be cancelled, not transitioned to " + newStatus, 
+                        HttpStatus.BAD_REQUEST, "INVALID_STATUS_TRANSITION");
+            }
+        }
+
+        // ACTIVE can transition to any state except back to ACTIVE (no-op)
+        if (normalizedCurrent == TicketStatus.ACTIVE) {
+            // All transitions from ACTIVE are valid
+            return;
+        }
+
+        // Any other transition is invalid
+        throw new BaseException("Invalid status transition from " + currentStatus + " to " + newStatus, 
+                HttpStatus.BAD_REQUEST, "INVALID_STATUS_TRANSITION");
+    }
+
+    /**
+     * Normalize legacy status values to their modern equivalents
+     * ISSUED → ACTIVE
+     * VOID → CANCELLED
+     * Other values remain unchanged
+     */
+    private TicketStatus normalizeLegacyStatus(TicketStatus status) {
+        if (status == TicketStatus.ISSUED) {
+            return TicketStatus.ACTIVE;
+        }
+        if (status == TicketStatus.VOID) {
+            return TicketStatus.CANCELLED;
+        }
+        return status;
     }
 
     /**

@@ -128,7 +128,7 @@ public class BookingService {
             ticket.setFareBasis(passengerRequests.get(index).getFareClass() != null ? passengerRequests.get(index).getFareClass() : "ECONOMY");
             ticket.setFare(calculateSeatFare(seat));
             ticket.setTaxes(calculateSeatTaxes(seat));
-            ticket.setStatus(TicketStatus.ISSUED);
+            ticket.setStatus(TicketStatus.ACTIVE);
             ticket.setIssuedAt(Instant.now());
 
             Ticket savedTicket = ticketRepository.save(ticket);
@@ -225,7 +225,7 @@ public class BookingService {
 
         List<Ticket> tickets = ticketRepository.findByBookingId(id);
         for (Ticket ticket : tickets) {
-            ticket.setStatus(TicketStatus.VOID);
+            ticket.setStatus(TicketStatus.CANCELLED);
             ticketRepository.save(ticket);
 
             seatAllocationRepository.findByTicketId(ticket.getId()).ifPresent(allocation -> {
