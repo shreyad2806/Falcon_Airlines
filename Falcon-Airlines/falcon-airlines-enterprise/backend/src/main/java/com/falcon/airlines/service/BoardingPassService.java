@@ -18,6 +18,7 @@ import com.falcon.airlines.repository.BookingRepository;
 import com.falcon.airlines.repository.BoardingPassRepository;
 import com.falcon.airlines.repository.SeatAllocationRepository;
 import com.falcon.airlines.repository.TicketRepository;
+import com.falcon.airlines.util.QrTokenUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -38,15 +39,18 @@ public class BoardingPassService {
     private final TicketRepository ticketRepository;
     private final BookingRepository bookingRepository;
     private final SeatAllocationRepository seatAllocationRepository;
+    private final QrTokenUtil qrTokenUtil;
 
     public BoardingPassService(BoardingPassRepository boardingPassRepository,
                               TicketRepository ticketRepository,
                               BookingRepository bookingRepository,
-                              SeatAllocationRepository seatAllocationRepository) {
+                              SeatAllocationRepository seatAllocationRepository,
+                              QrTokenUtil qrTokenUtil) {
         this.boardingPassRepository = boardingPassRepository;
         this.ticketRepository = ticketRepository;
         this.bookingRepository = bookingRepository;
         this.seatAllocationRepository = seatAllocationRepository;
+        this.qrTokenUtil = qrTokenUtil;
     }
 
     /**
@@ -81,6 +85,15 @@ public class BoardingPassService {
         // Create boarding pass
         BoardingPass boardingPass = createBoardingPassFromTicket(ticket);
         BoardingPass saved = boardingPassRepository.save(boardingPass);
+
+        // Regenerate verification token with the actual ID
+        String verificationToken = qrTokenUtil.generateVerificationToken(
+                saved.getId(),
+                saved.getBoardingPassNumber(),
+                saved.getStatus().toString()
+        );
+        saved.setVerificationToken(verificationToken);
+        saved = boardingPassRepository.save(saved);
 
         log.info("Boarding pass generated successfully: boardingPassNumber={}, ticketId={}", 
                 saved.getBoardingPassNumber(), ticketId);
@@ -290,6 +303,14 @@ public class BoardingPassService {
         boardingPass.setGeneratedAt(Instant.now());
         boardingPass.setQrCodePayload(generateQrCodePayload(ticket));
 
+        // Generate secure verification token for QR code
+        String verificationToken = qrTokenUtil.generateVerificationToken(
+                null, // ID will be set after save
+                boardingPass.getBoardingPassNumber(),
+                boardingPass.getStatus().toString()
+        );
+        boardingPass.setVerificationToken(verificationToken);
+
         // Get seat information
         SeatAllocation seatAllocation = seatAllocationRepository.findByTicketId(ticket.getId()).orElse(null);
         if (seatAllocation != null && seatAllocation.getSeat() != null) {
@@ -447,6 +468,7 @@ public class BoardingPassService {
         response.setBoardingPassNumber(boardingPass.getBoardingPassNumber());
         response.setStatus(boardingPass.getStatus());
         response.setQrCodePayload(boardingPass.getQrCodePayload());
+        response.setVerificationToken(boardingPass.getVerificationToken());
         response.setGeneratedAt(boardingPass.getGeneratedAt());
         response.setCheckedInAt(boardingPass.getCheckedInAt());
         response.setBoardedAt(boardingPass.getBoardedAt());

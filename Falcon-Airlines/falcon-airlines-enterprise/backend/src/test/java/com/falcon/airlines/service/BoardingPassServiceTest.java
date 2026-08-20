@@ -18,6 +18,7 @@ import com.falcon.airlines.repository.BookingRepository;
 import com.falcon.airlines.repository.BoardingPassRepository;
 import com.falcon.airlines.repository.SeatAllocationRepository;
 import com.falcon.airlines.repository.TicketRepository;
+import com.falcon.airlines.util.QrTokenUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -53,6 +54,9 @@ class BoardingPassServiceTest {
     @Mock
     private SeatAllocationRepository seatAllocationRepository;
 
+    @Mock
+    private QrTokenUtil qrTokenUtil;
+
     private BoardingPassService boardingPassService;
 
     @BeforeEach
@@ -61,13 +65,18 @@ class BoardingPassServiceTest {
         ticketRepository = mock(TicketRepository.class);
         bookingRepository = mock(BookingRepository.class);
         seatAllocationRepository = mock(SeatAllocationRepository.class);
+        qrTokenUtil = mock(QrTokenUtil.class);
 
         boardingPassService = new BoardingPassService(
                 boardingPassRepository,
                 ticketRepository,
                 bookingRepository,
-                seatAllocationRepository
+                seatAllocationRepository,
+                qrTokenUtil
         );
+
+        // Mock QrTokenUtil behavior
+        lenient().when(qrTokenUtil.generateVerificationToken(any(), any(), any())).thenReturn("mock-verification-token");
     }
 
     @AfterEach

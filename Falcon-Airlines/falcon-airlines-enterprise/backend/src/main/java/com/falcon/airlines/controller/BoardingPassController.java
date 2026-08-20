@@ -4,15 +4,19 @@ import com.falcon.airlines.dto.response.BoardingPassResponse;
 import com.falcon.airlines.enums.BoardingPassStatus;
 import com.falcon.airlines.response.ApiResponse;
 import com.falcon.airlines.service.BoardingPassService;
+import com.falcon.airlines.service.QrCodeService;
+import com.falcon.airlines.service.QrVerificationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * REST endpoints for boarding pass management.
@@ -23,9 +27,15 @@ import java.util.List;
 public class BoardingPassController {
 
     private final BoardingPassService boardingPassService;
+    private final QrCodeService qrCodeService;
+    private final QrVerificationService qrVerificationService;
 
-    public BoardingPassController(BoardingPassService boardingPassService) {
+    public BoardingPassController(BoardingPassService boardingPassService,
+                                  QrCodeService qrCodeService,
+                                  QrVerificationService qrVerificationService) {
         this.boardingPassService = boardingPassService;
+        this.qrCodeService = qrCodeService;
+        this.qrVerificationService = qrVerificationService;
     }
 
     @Operation(summary = "Generate boarding pass for a ticket")
@@ -100,5 +110,36 @@ public class BoardingPassController {
     public ResponseEntity<ApiResponse<BoardingPassResponse>> boardPassenger(@PathVariable Long id) {
         BoardingPassResponse response = boardingPassService.boardPassenger(id);
         return ResponseEntity.ok(ApiResponse.ok("Passenger boarded successfully", response));
+    }
+
+    @Operation(summary = "Generate QR code for boarding pass")
+    @SecurityRequirement(name = "bearerAuth")
+    @GetMapping("/{id}/qr-code")
+    @PreAuthorize("hasAnyAuthority('BOARDING_PASS_READ', 'BOOKING_READ')")
+    public ResponseEntity<ApiResponse<Map<String, String>>> generateQrCode(@PathVariable Long id) {
+        BoardingPassResponse boardingPass = boardingPassService.getBoardingPassById(id);
+        String qrCodeBase64 = qrCodeService.generateQrCodeBase64(boardingPass.getVerificationToken());
+        
+        Map<String, String> response = Map.of(
+                "qrCode", qrCodeBase64,
+                "format", "PNG",
+                "encoding", "BASE64"
+        );
+        
+        return ResponseEntity.ok(ApiResponse.ok("QR code generated successfully", response));
+    }
+
+    @Operation(summary = "Verify QR code token")
+    @SecurityRequirement(name = "bearerAuth")
+    @PostMapping("/verify")
+    @PreAuthorize("hasAnyAuthority('BOARDING_PASS_READ', 'BOOKING_READ')")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> verifyQrToken(@RequestBody Map<String, String> request) {
+        String token = request.get("token");
+        if (token == null || token.isEmpty()) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("Token is required"));
+        }
+        
+        Map<String, Object> verificationResult = qrVerificationService.verifyQrToken(token);
+        return ResponseEntity.ok(ApiResponse.ok("QR token verified successfully", verificationResult));
     }
 }

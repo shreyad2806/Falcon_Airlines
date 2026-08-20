@@ -224,6 +224,49 @@ class BoardingPassControllerIntegrationTest extends BaseIntegrationTest {
                 .andExpect(jsonPath("$.data.status").value(BoardingPassStatus.USED.toString()));
     }
 
+    @Test
+    @WithMockUser(authorities = "BOARDING_PASS_READ")
+    void generateQrCode_success() throws Exception {
+        BoardingPass boardingPass = createBoardingPass(ticket);
+        boardingPass.setVerificationToken("test-verification-token");
+        boardingPass = boardingPassRepository.save(boardingPass);
+
+        mockMvc.perform(get("/api/boarding-passes/" + boardingPass.getId() + "/qr-code"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.qrCode").isNotEmpty())
+                .andExpect(jsonPath("$.data.format").value("PNG"))
+                .andExpect(jsonPath("$.data.encoding").value("BASE64"));
+    }
+
+    @Test
+    @WithMockUser(authorities = "BOARDING_PASS_READ")
+    void verifyQrToken_success() throws Exception {
+        BoardingPass boardingPass = createBoardingPass(ticket);
+        boardingPass.setVerificationToken("test-verification-token");
+        boardingPass = boardingPassRepository.save(boardingPass);
+
+        String requestBody = "{\"token\":\"test-verification-token\"}";
+
+        mockMvc.perform(post("/api/boarding-passes/verify")
+                        .contentType("application/json")
+                        .content(requestBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.valid").value(true));
+    }
+
+    @Test
+    @WithMockUser(authorities = "BOARDING_PASS_READ")
+    void verifyQrToken_missingToken() throws Exception {
+        String requestBody = "{}";
+
+        mockMvc.perform(post("/api/boarding-passes/verify")
+                        .contentType("application/json")
+                        .content(requestBody))
+                .andExpect(status().isBadRequest());
+    }
+
     // Helper methods
 
     private User createCustomer(String username) {

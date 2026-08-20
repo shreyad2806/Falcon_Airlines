@@ -57,6 +57,9 @@ public class BoardingPass extends AuditEntity {
     @Column(name = "qr_code_payload", length = 500)
     private String qrCodePayload;
 
+    @Column(name = "verification_token", length = 500)
+    private String verificationToken;
+
     @Column(name = "generated_at", nullable = false)
     private Instant generatedAt;
 

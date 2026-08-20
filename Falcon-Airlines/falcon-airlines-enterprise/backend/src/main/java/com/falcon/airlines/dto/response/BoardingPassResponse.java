@@ -32,6 +32,7 @@ public class BoardingPassResponse {
     private Instant boardingTime;
     private BoardingPassStatus status;
     private String qrCodePayload;
+    private String verificationToken;
     private Instant generatedAt;
     private Instant checkedInAt;
     private Instant boardedAt;
