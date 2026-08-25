@@ -110,7 +110,7 @@ class BookingTransactionIntegrationTest extends BaseIntegrationTest {
         // Verify tickets exist
         List<Ticket> tickets = ticketRepository.findByBookingId(booking.getId());
         assertThat(tickets).hasSize(2);
-        assertThat(tickets).allMatch(t -> t.getStatus() == TicketStatus.ISSUED);
+        assertThat(tickets).allMatch(t -> t.getStatus() == TicketStatus.ACTIVE);
 
         // Verify seat allocations exist
         Optional<SeatAllocation> alloc1 = seatAllocationRepository.findBySeatIdAndFlightId(seat1.getId(), flight.getId());
@@ -241,7 +241,7 @@ class BookingTransactionIntegrationTest extends BaseIntegrationTest {
 
         List<Ticket> tickets = ticketRepository.findByBookingId(bookingId);
         assertThat(tickets).hasSize(1);
-        assertThat(tickets.get(0).getStatus()).isEqualTo(TicketStatus.ISSUED);
+        assertThat(tickets.get(0).getStatus()).isEqualTo(TicketStatus.ACTIVE);
 
         Optional<SeatAllocation> allocation = seatAllocationRepository.findBySeatIdAndFlightId(seat1.getId(), flight.getId());
         assertThat(allocation).isPresent();
@@ -256,7 +256,7 @@ class BookingTransactionIntegrationTest extends BaseIntegrationTest {
         // Verify ticket status changed
         List<Ticket> cancelledTickets = ticketRepository.findByBookingId(bookingId);
         assertThat(cancelledTickets).hasSize(1);
-        assertThat(cancelledTickets.get(0).getStatus()).isEqualTo(TicketStatus.VOID);
+        assertThat(cancelledTickets.get(0).getStatus()).isEqualTo(TicketStatus.CANCELLED);
 
         // Verify seat released
         Optional<SeatAllocation> allocationAfter = seatAllocationRepository.findBySeatIdAndFlightId(seat1.getId(), flight.getId());
@@ -296,7 +296,7 @@ class BookingTransactionIntegrationTest extends BaseIntegrationTest {
 
         List<Ticket> tickets = ticketRepository.findByBookingId(validBookingId);
         assertThat(tickets).hasSize(1);
-        assertThat(tickets.get(0).getStatus()).isEqualTo(TicketStatus.ISSUED);
+        assertThat(tickets.get(0).getStatus()).isEqualTo(TicketStatus.ACTIVE);
 
         Optional<SeatAllocation> allocation = seatAllocationRepository.findBySeatIdAndFlightId(seat1.getId(), flight.getId());
         assertThat(allocation).isPresent();

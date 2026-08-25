@@ -115,6 +115,19 @@ public class BoardingPassService {
     }
 
     /**
+     * Get boarding pass entity by ID (for internal use like PDF generation).
+     * Includes authorization check.
+     */
+    public BoardingPass getBoardingPassEntityById(Long id) {
+        BoardingPass boardingPass = boardingPassRepository.findById(id)
+                .orElseThrow(() -> new BaseException("Boarding pass not found", HttpStatus.NOT_FOUND, "BOARDING_PASS_NOT_FOUND"));
+
+        checkBoardingPassAccessAuthorization(boardingPass);
+
+        return boardingPass;
+    }
+
+    /**
      * Get boarding pass by boarding pass number with authorization check
      */
     public BoardingPassResponse getBoardingPassByNumber(String boardingPassNumber) {
@@ -303,13 +316,8 @@ public class BoardingPassService {
         boardingPass.setGeneratedAt(Instant.now());
         boardingPass.setQrCodePayload(generateQrCodePayload(ticket));
 
-        // Generate secure verification token for QR code
-        String verificationToken = qrTokenUtil.generateVerificationToken(
-                null, // ID will be set after save
-                boardingPass.getBoardingPassNumber(),
-                boardingPass.getStatus().toString()
-        );
-        boardingPass.setVerificationToken(verificationToken);
+        // Verification token will be generated after save when the ID is available
+        // (see generateBoardingPass method)
 
         // Get seat information
         SeatAllocation seatAllocation = seatAllocationRepository.findByTicketId(ticket.getId()).orElse(null);

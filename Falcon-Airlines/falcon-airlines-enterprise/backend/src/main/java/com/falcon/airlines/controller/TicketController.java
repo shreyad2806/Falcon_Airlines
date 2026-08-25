@@ -1,13 +1,18 @@
 package com.falcon.airlines.controller;
 
 import com.falcon.airlines.dto.response.TicketDetailResponse;
+import com.falcon.airlines.entity.Ticket;
 import com.falcon.airlines.enums.TicketStatus;
 import com.falcon.airlines.response.ApiResponse;
+import com.falcon.airlines.service.TicketPdfService;
 import com.falcon.airlines.service.TicketService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -23,9 +28,11 @@ import java.util.List;
 public class TicketController {
 
     private final TicketService ticketService;
+    private final TicketPdfService ticketPdfService;
 
-    public TicketController(TicketService ticketService) {
+    public TicketController(TicketService ticketService, TicketPdfService ticketPdfService) {
         this.ticketService = ticketService;
+        this.ticketPdfService = ticketPdfService;
     }
 
     @Operation(summary = "Get ticket by ID")
@@ -109,5 +116,25 @@ public class TicketController {
     public ResponseEntity<ApiResponse<TicketDetailResponse>> regenerateTicketForBooking(@PathVariable Long bookingId) {
         TicketDetailResponse response = ticketService.regenerateTicketForBooking(bookingId);
         return ResponseEntity.ok(ApiResponse.ok("Ticket regenerated successfully", response));
+    }
+
+    @Operation(summary = "Download ticket as PDF")
+    @SecurityRequirement(name = "bearerAuth")
+    @GetMapping("/{id}/pdf")
+    @PreAuthorize("hasAnyAuthority('TICKET_READ', 'BOOKING_READ')")
+    public ResponseEntity<byte[]> downloadTicketPdf(@PathVariable Long id) {
+        TicketDetailResponse ticketResponse = ticketService.getTicketById(id);
+        
+        // Convert response to entity for PDF generation
+        Ticket ticket = ticketService.getTicketEntityById(id);
+        
+        byte[] pdfBytes = ticketPdfService.generateTicketPdf(ticket);
+        
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDispositionFormData("attachment", "ticket_" + ticket.getTicketNumber() + ".pdf");
+        headers.setContentLength(pdfBytes.length);
+        
+        return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
     }
 }

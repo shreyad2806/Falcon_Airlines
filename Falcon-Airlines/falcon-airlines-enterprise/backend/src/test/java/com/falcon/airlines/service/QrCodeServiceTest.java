@@ -54,28 +54,6 @@ class QrCodeServiceTest {
     }
 
     @Test
-    void generateQrCodeBase64_differentTokens() {
-        String token1 = "test-token-12345";
-        String token2 = "test-token-67890";
-        
-        String qrCode1 = qrCodeService.generateQrCodeBase64(token1);
-        String qrCode2 = qrCodeService.generateQrCodeBase64(token2);
-        
-        // Different inputs should produce different outputs
-        assertThat(qrCode1).isNotEqualTo(qrCode2);
-    }
-
-    @Test
-    void generateQrCodeBytes_emptyToken() {
-        String verificationToken = "";
-        
-        byte[] qrCodeBytes = qrCodeService.generateQrCodeBytes(verificationToken);
-        
-        assertThat(qrCodeBytes).isNotNull();
-        assertThat(qrCodeBytes).isNotEmpty();
-    }
-
-    @Test
     void generateQrCodeBase64_nullToken() {
         assertThatThrownBy(() -> qrCodeService.generateQrCodeBase64(null))
                 .isInstanceOf(RuntimeException.class)

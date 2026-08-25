@@ -381,7 +381,7 @@ class BookingServiceTest extends BaseUnitTest {
 
         verify(bookingRepository).save(booking);
         assertThat(booking.getStatus()).isEqualTo(BookingStatus.CANCELLED);
-        assertThat(ticket.getStatus()).isEqualTo(TicketStatus.VOID);
+        assertThat(ticket.getStatus()).isEqualTo(TicketStatus.CANCELLED);
         verify(seatAllocationRepository).delete(allocation);
     }
 

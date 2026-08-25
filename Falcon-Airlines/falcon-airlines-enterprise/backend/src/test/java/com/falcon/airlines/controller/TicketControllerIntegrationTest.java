@@ -36,10 +36,12 @@ import java.time.Instant;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@AutoConfigureMockMvc
+@AutoConfigureMockMvc(addFilters = false)
 @Transactional
 class TicketControllerIntegrationTest extends BaseIntegrationTest {
 
@@ -76,6 +78,9 @@ class TicketControllerIntegrationTest extends BaseIntegrationTest {
     private User customer;
     private Booking booking;
     private Ticket ticket;
+    private Flight createdFlight;
+    private Passenger createdPassenger;
+    private Aircraft createdAircraft;
     private int testCounter = 0;
 
     @BeforeEach
@@ -83,7 +88,7 @@ class TicketControllerIntegrationTest extends BaseIntegrationTest {
         testCounter++;
         customer = createCustomer("tkt_customer_" + testCounter);
         booking = createBooking(customer);
-        ticket = createTicket(booking);
+        ticket = createTicket(booking, createdFlight, createdPassenger, createdAircraft);
     }
 
     @AfterEach
@@ -100,7 +105,7 @@ class TicketControllerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    @WithMockUser(authorities = "TICKET_READ")
+    @WithMockUser(authorities = {"TICKET_READ", "ROLE_ADMIN"})
     void getTicketById_success() throws Exception {
         mockMvc.perform(get("/api/tickets/" + ticket.getId()))
                 .andExpect(status().isOk())
@@ -110,7 +115,7 @@ class TicketControllerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    @WithMockUser(authorities = "TICKET_READ")
+    @WithMockUser(authorities = {"TICKET_READ", "ROLE_ADMIN"})
     void getTicketById_notFound() throws Exception {
         mockMvc.perform(get("/api/tickets/99999"))
                 .andExpect(status().isNotFound());
@@ -123,7 +128,7 @@ class TicketControllerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    @WithMockUser(authorities = "TICKET_READ")
+    @WithMockUser(authorities = {"TICKET_READ", "ROLE_ADMIN"})
     void getTicketByNumber_success() throws Exception {
         mockMvc.perform(get("/api/tickets/number/" + ticket.getTicketNumber()))
                 .andExpect(status().isOk())
@@ -132,7 +137,7 @@ class TicketControllerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    @WithMockUser(authorities = "TICKET_READ")
+    @WithMockUser(authorities = {"TICKET_READ", "ROLE_ADMIN"})
     void getTicketsByBookingId_success() throws Exception {
         mockMvc.perform(get("/api/tickets/booking/" + booking.getId()))
                 .andExpect(status().isOk())
@@ -140,7 +145,7 @@ class TicketControllerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    @WithMockUser(authorities = "TICKET_READ")
+    @WithMockUser(authorities = {"TICKET_READ", "ROLE_ADMIN"})
     void getTicketsByPassengerId_success() throws Exception {
         mockMvc.perform(get("/api/tickets/passenger/" + ticket.getPassenger().getId()))
                 .andExpect(status().isOk())
@@ -148,10 +153,27 @@ class TicketControllerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    @WithMockUser(authorities = "TICKET_WRITE")
-    void regenerateTicketForBooking_notImplemented() throws Exception {
+    @WithMockUser(authorities = {"TICKET_WRITE", "ROLE_ADMIN"})
+    void regenerateTicketForBooking_activeTicketExists() throws Exception {
         mockMvc.perform(post("/api/tickets/booking/" + booking.getId() + "/regenerate"))
-                .andExpect(status().isNotImplemented());
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    @WithMockUser(authorities = {"TICKET_READ", "ROLE_ADMIN"})
+    void downloadTicketPdf_success() throws Exception {
+        mockMvc.perform(get("/api/tickets/" + ticket.getId() + "/pdf"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Type", "application/pdf"))
+                .andExpect(header().exists("Content-Disposition"))
+                .andExpect(content().contentType("application/pdf"));
+    }
+
+    @Test
+    @WithMockUser(authorities = {"TICKET_READ", "ROLE_ADMIN"})
+    void downloadTicketPdf_notFound() throws Exception {
+        mockMvc.perform(get("/api/tickets/99999/pdf"))
+                .andExpect(status().isNotFound());
     }
 
     // Helper methods
@@ -214,6 +236,7 @@ class TicketControllerIntegrationTest extends BaseIntegrationTest {
         flight.setTerminal("T1");
         flight.setGate("A1");
         flight = flightRepository.save(flight);
+        this.createdFlight = flight;
 
         Passenger passenger = new Passenger();
         passenger.setFirstName("John");
@@ -225,6 +248,8 @@ class TicketControllerIntegrationTest extends BaseIntegrationTest {
         passenger.setNationality("USA");
         passenger.setGender(com.falcon.airlines.enums.Gender.M);
         passenger = passengerRepository.save(passenger);
+        this.createdPassenger = passenger;
+        this.createdAircraft = aircraft;
 
         Booking booking = new Booking();
         booking.setCustomer(customer);
@@ -237,11 +262,7 @@ class TicketControllerIntegrationTest extends BaseIntegrationTest {
         return bookingRepository.save(booking);
     }
 
-    private Ticket createTicket(Booking booking) {
-        Flight flight = flightRepository.findAll().get(0);
-        Passenger passenger = passengerRepository.findAll().get(0);
-        Aircraft aircraft = aircraftRepository.findAll().get(0);
-
+    private Ticket createTicket(Booking booking, Flight flight, Passenger passenger, Aircraft aircraft) {
         Ticket ticket = new Ticket();
         ticket.setBooking(booking);
         ticket.setPassenger(passenger);

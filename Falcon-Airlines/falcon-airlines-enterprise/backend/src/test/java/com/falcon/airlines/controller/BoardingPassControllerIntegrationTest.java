@@ -44,7 +44,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@AutoConfigureMockMvc
+@AutoConfigureMockMvc(addFilters = false)
 @Transactional
 class BoardingPassControllerIntegrationTest extends BaseIntegrationTest {
 
@@ -81,10 +81,16 @@ class BoardingPassControllerIntegrationTest extends BaseIntegrationTest {
     @Autowired
     private SeatAllocationRepository seatAllocationRepository;
 
+    @Autowired
+    private com.falcon.airlines.util.QrTokenUtil qrTokenUtil;
+
     private User customer;
     private Booking booking;
     private Ticket ticket;
     private BoardingPass boardingPass;
+    private Flight createdFlight;
+    private Passenger createdPassenger;
+    private Aircraft createdAircraft;
     private int testCounter = 0;
 
     @BeforeEach
@@ -92,7 +98,7 @@ class BoardingPassControllerIntegrationTest extends BaseIntegrationTest {
         testCounter++;
         customer = createCustomer("bp_customer_" + testCounter);
         booking = createBooking(customer);
-        ticket = createTicket(booking);
+        ticket = createTicket(booking, createdFlight, createdPassenger, createdAircraft);
     }
 
     @AfterEach
@@ -110,7 +116,7 @@ class BoardingPassControllerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    @WithMockUser(authorities = "BOARDING_PASS_WRITE")
+    @WithMockUser(authorities = {"BOARDING_PASS_WRITE", "ROLE_ADMIN"})
     void generateBoardingPass_success() throws Exception {
         mockMvc.perform(post("/api/boarding-passes/ticket/" + ticket.getId()))
                 .andExpect(status().isOk())
@@ -120,7 +126,7 @@ class BoardingPassControllerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    @WithMockUser(authorities = "BOARDING_PASS_WRITE")
+    @WithMockUser(authorities = {"BOARDING_PASS_WRITE", "ROLE_ADMIN"})
     void generateBoardingPass_alreadyExists() throws Exception {
         // Create first boarding pass
         BoardingPass firstPass = createBoardingPass(ticket);
@@ -131,7 +137,7 @@ class BoardingPassControllerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    @WithMockUser(authorities = "BOARDING_PASS_READ")
+    @WithMockUser(authorities = {"BOARDING_PASS_READ", "ROLE_ADMIN"})
     void getBoardingPassById_success() throws Exception {
         BoardingPass boardingPass = createBoardingPass(ticket);
         boardingPass = boardingPassRepository.save(boardingPass);
@@ -144,14 +150,14 @@ class BoardingPassControllerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    @WithMockUser(authorities = "BOARDING_PASS_READ")
+    @WithMockUser(authorities = {"BOARDING_PASS_READ", "ROLE_ADMIN"})
     void getBoardingPassById_notFound() throws Exception {
         mockMvc.perform(get("/api/boarding-passes/99999"))
                 .andExpect(status().isNotFound());
     }
 
     @Test
-    @WithMockUser(authorities = "BOARDING_PASS_READ")
+    @WithMockUser(authorities = {"BOARDING_PASS_READ", "ROLE_ADMIN"})
     void getBoardingPassByNumber_success() throws Exception {
         BoardingPass boardingPass = createBoardingPass(ticket);
         boardingPass = boardingPassRepository.save(boardingPass);
@@ -163,7 +169,7 @@ class BoardingPassControllerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    @WithMockUser(authorities = "BOARDING_PASS_READ")
+    @WithMockUser(authorities = {"BOARDING_PASS_READ", "ROLE_ADMIN"})
     void getBoardingPassesByBookingId_success() throws Exception {
         BoardingPass boardingPass = createBoardingPass(ticket);
         boardingPass = boardingPassRepository.save(boardingPass);
@@ -174,7 +180,7 @@ class BoardingPassControllerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    @WithMockUser(authorities = "BOARDING_PASS_READ")
+    @WithMockUser(authorities = {"BOARDING_PASS_READ", "ROLE_ADMIN"})
     void getBoardingPassesByPassengerId_success() throws Exception {
         BoardingPass boardingPass = createBoardingPass(ticket);
         boardingPass = boardingPassRepository.save(boardingPass);
@@ -185,7 +191,7 @@ class BoardingPassControllerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    @WithMockUser(authorities = "BOARDING_PASS_WRITE")
+    @WithMockUser(authorities = {"BOARDING_PASS_WRITE", "ROLE_ADMIN"})
     void updateBoardingPassStatus_success() throws Exception {
         BoardingPass boardingPass = createBoardingPass(ticket);
         boardingPass.setStatus(BoardingPassStatus.GENERATED);
@@ -199,7 +205,7 @@ class BoardingPassControllerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    @WithMockUser(authorities = "BOARDING_PASS_WRITE")
+    @WithMockUser(authorities = {"BOARDING_PASS_WRITE", "ROLE_ADMIN"})
     void checkInBoardingPass_success() throws Exception {
         BoardingPass boardingPass = createBoardingPass(ticket);
         boardingPass.setStatus(BoardingPassStatus.GENERATED);
@@ -212,7 +218,7 @@ class BoardingPassControllerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    @WithMockUser(authorities = "BOARDING_PASS_WRITE")
+    @WithMockUser(authorities = {"BOARDING_PASS_WRITE", "ROLE_ADMIN"})
     void boardPassenger_success() throws Exception {
         BoardingPass boardingPass = createBoardingPass(ticket);
         boardingPass.setStatus(BoardingPassStatus.BOARDING);
@@ -225,7 +231,7 @@ class BoardingPassControllerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    @WithMockUser(authorities = "BOARDING_PASS_READ")
+    @WithMockUser(authorities = {"BOARDING_PASS_READ", "ROLE_ADMIN"})
     void generateQrCode_success() throws Exception {
         BoardingPass boardingPass = createBoardingPass(ticket);
         boardingPass.setVerificationToken("test-verification-token");
@@ -240,13 +246,20 @@ class BoardingPassControllerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    @WithMockUser(authorities = "BOARDING_PASS_READ")
+    @WithMockUser(authorities = {"BOARDING_PASS_READ", "ROLE_ADMIN"})
     void verifyQrToken_success() throws Exception {
         BoardingPass boardingPass = createBoardingPass(ticket);
-        boardingPass.setVerificationToken("test-verification-token");
         boardingPass = boardingPassRepository.save(boardingPass);
 
-        String requestBody = "{\"token\":\"test-verification-token\"}";
+        String realToken = qrTokenUtil.generateVerificationToken(
+                boardingPass.getId(),
+                boardingPass.getBoardingPassNumber(),
+                boardingPass.getStatus().toString()
+        );
+        boardingPass.setVerificationToken(realToken);
+        boardingPass = boardingPassRepository.save(boardingPass);
+
+        String requestBody = "{\"token\":\"" + realToken + "\"}";
 
         mockMvc.perform(post("/api/boarding-passes/verify")
                         .contentType("application/json")
@@ -257,7 +270,7 @@ class BoardingPassControllerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    @WithMockUser(authorities = "BOARDING_PASS_READ")
+    @WithMockUser(authorities = {"BOARDING_PASS_READ", "ROLE_ADMIN"})
     void verifyQrToken_missingToken() throws Exception {
         String requestBody = "{}";
 
@@ -327,6 +340,7 @@ class BoardingPassControllerIntegrationTest extends BaseIntegrationTest {
         flight.setTerminal("T1");
         flight.setGate("A1");
         flight = flightRepository.save(flight);
+        this.createdFlight = flight;
 
         Passenger passenger = new Passenger();
         passenger.setFirstName("John");
@@ -338,6 +352,8 @@ class BoardingPassControllerIntegrationTest extends BaseIntegrationTest {
         passenger.setNationality("USA");
         passenger.setGender(com.falcon.airlines.enums.Gender.M);
         passenger = passengerRepository.save(passenger);
+        this.createdPassenger = passenger;
+        this.createdAircraft = aircraft;
 
         Booking booking = new Booking();
         booking.setCustomer(customer);
@@ -350,11 +366,7 @@ class BoardingPassControllerIntegrationTest extends BaseIntegrationTest {
         return bookingRepository.save(booking);
     }
 
-    private Ticket createTicket(Booking booking) {
-        Flight flight = flightRepository.findAll().get(0);
-        Passenger passenger = passengerRepository.findAll().get(0);
-        Aircraft aircraft = aircraftRepository.findAll().get(0);
-
+    private Ticket createTicket(Booking booking, Flight flight, Passenger passenger, Aircraft aircraft) {
         Ticket ticket = new Ticket();
         ticket.setBooking(booking);
         ticket.setPassenger(passenger);

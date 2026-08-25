@@ -45,13 +45,11 @@ public class QrTokenUtil {
         Instant expiration = now.plus(tokenValidityHours, ChronoUnit.HOURS);
 
         return Jwts.builder()
-                .subject(boardingPassId.toString())
-                .claims(Map.of(
-                        "bpn", boardingPassNumber, // Boarding pass number
-                        "status", status,          // Boarding pass status at generation time
-                        "iat", Date.from(now),
-                        "exp", Date.from(expiration)
-                ))
+                .subject(boardingPassId != null ? boardingPassId.toString() : "0")
+                .claim("bpn", boardingPassNumber)
+                .claim("status", status)
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(expiration))
                 .signWith(getSigningKey())
                 .compact();
     }
@@ -69,7 +67,7 @@ public class QrTokenUtil {
                     .getPayload();
 
             String subject = claims.getSubject();
-            return Long.parseLong(subject);
+            return subject != null ? Long.parseLong(subject) : null;
         } catch (Exception e) {
             return null;
         }
@@ -121,7 +119,7 @@ public class QrTokenUtil {
                     .getPayload();
 
             Date expiration = claims.getExpiration();
-            return expiration.before(new Date());
+            return expiration != null && expiration.before(new Date());
         } catch (Exception e) {
             return true;
         }

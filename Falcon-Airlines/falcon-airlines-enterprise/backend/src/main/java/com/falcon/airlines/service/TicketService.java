@@ -56,6 +56,19 @@ public class TicketService {
     }
 
     /**
+     * Get ticket entity by ID (for internal use like PDF generation)
+     * Includes authorization check
+     */
+    public Ticket getTicketEntityById(Long ticketId) {
+        Ticket ticket = ticketRepository.findById(ticketId)
+                .orElseThrow(() -> new BaseException("Ticket not found", HttpStatus.NOT_FOUND, "TICKET_NOT_FOUND"));
+
+        checkTicketAccessAuthorization(ticket);
+
+        return ticket;
+    }
+
+    /**
      * Get ticket by ticket number with authorization check
      */
     public TicketDetailResponse getTicketByNumber(String ticketNumber) {
@@ -229,10 +242,11 @@ public class TicketService {
 
         // REFUNDED can only transition to CANCELLED
         if (normalizedCurrent == TicketStatus.REFUNDED) {
-            if (normalizedNew != TicketStatus.CANCELLED) {
-                throw new BaseException("Refunded ticket can only be cancelled, not transitioned to " + newStatus, 
-                        HttpStatus.BAD_REQUEST, "INVALID_STATUS_TRANSITION");
+            if (normalizedNew == TicketStatus.CANCELLED) {
+                return; // Valid: REFUNDED → CANCELLED
             }
+            throw new BaseException("Refunded ticket can only be cancelled, not transitioned to " + newStatus, 
+                    HttpStatus.BAD_REQUEST, "INVALID_STATUS_TRANSITION");
         }
 
         // ACTIVE can transition to any state except back to ACTIVE (no-op)

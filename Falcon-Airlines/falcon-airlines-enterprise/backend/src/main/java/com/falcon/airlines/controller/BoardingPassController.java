@@ -1,8 +1,10 @@
 package com.falcon.airlines.controller;
 
 import com.falcon.airlines.dto.response.BoardingPassResponse;
+import com.falcon.airlines.entity.BoardingPass;
 import com.falcon.airlines.enums.BoardingPassStatus;
 import com.falcon.airlines.response.ApiResponse;
+import com.falcon.airlines.service.BoardingPassPdfService;
 import com.falcon.airlines.service.BoardingPassService;
 import com.falcon.airlines.service.QrCodeService;
 import com.falcon.airlines.service.QrVerificationService;
@@ -10,6 +12,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -29,13 +33,16 @@ public class BoardingPassController {
     private final BoardingPassService boardingPassService;
     private final QrCodeService qrCodeService;
     private final QrVerificationService qrVerificationService;
+    private final BoardingPassPdfService boardingPassPdfService;
 
     public BoardingPassController(BoardingPassService boardingPassService,
                                   QrCodeService qrCodeService,
-                                  QrVerificationService qrVerificationService) {
+                                  QrVerificationService qrVerificationService,
+                                  BoardingPassPdfService boardingPassPdfService) {
         this.boardingPassService = boardingPassService;
         this.qrCodeService = qrCodeService;
         this.qrVerificationService = qrVerificationService;
+        this.boardingPassPdfService = boardingPassPdfService;
     }
 
     @Operation(summary = "Generate boarding pass for a ticket")
@@ -127,6 +134,24 @@ public class BoardingPassController {
         );
         
         return ResponseEntity.ok(ApiResponse.ok("QR code generated successfully", response));
+    }
+
+    @Operation(summary = "Download boarding pass as PDF")
+    @SecurityRequirement(name = "bearerAuth")
+    @GetMapping("/{id}/pdf")
+    @PreAuthorize("hasAnyAuthority('BOARDING_PASS_READ', 'BOOKING_READ')")
+    public ResponseEntity<byte[]> downloadBoardingPassPdf(@PathVariable Long id) {
+        BoardingPass boardingPass = boardingPassService.getBoardingPassEntityById(id);
+
+        byte[] pdfBytes = boardingPassPdfService.generateBoardingPassPdf(boardingPass);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDispositionFormData("attachment",
+                "boarding_pass_" + boardingPass.getBoardingPassNumber() + ".pdf");
+        headers.setContentLength(pdfBytes.length);
+
+        return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
     }
 
     @Operation(summary = "Verify QR code token")

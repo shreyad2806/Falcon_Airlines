@@ -126,6 +126,13 @@
             <version>3.5.2</version>
         </dependency>
 
+        <!-- Apache PDFBox: PDF generation library -->
+        <dependency>
+            <groupId>org.apache.pdfbox</groupId>
+            <artifactId>pdfbox</artifactId>
+            <version>3.0.1</version>
+        </dependency>
+
         <!-- DevTools: automatic restart and live reload during development -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
