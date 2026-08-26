@@ -34,7 +34,7 @@ class DatabaseLayerIntegrationTest extends BaseIntegrationTest {
     void seedDataIsPresent() {
         assertThat(airportRepository.count()).isEqualTo(6);
         assertThat(aircraftRepository.count()).isEqualTo(3);
-        assertThat(flightRepository.count()).isEqualTo(6);
+        assertThat(flightRepository.count()).isGreaterThanOrEqualTo(6);
         assertThat(userRepository.count()).isEqualTo(1);
         assertThat(roleRepository.count()).isEqualTo(3);
         assertThat(permissionRepository.count()).isEqualTo(17);

@@ -101,7 +101,7 @@ public class BookingService {
 
         Booking booking = new Booking();
         booking.setCustomer(customer);
-        booking.setStatus(BookingStatus.PENDING);
+        booking.setStatus(BookingStatus.PENDING_PAYMENT);
         booking.setBookingDate(Instant.now());
         booking.setPaymentStatus(BookingPaymentStatus.PENDING);
         booking.setBookingReference(generateBookingReference());
@@ -270,16 +270,30 @@ public class BookingService {
 
         Set<Long> availableSeatIds = availableSeats.stream().map(Seat::getId).collect(Collectors.toSet());
 
+        int totalSeats = allSeats.size();
+        int available = availableSeats.size();
+        int blocked = totalSeats - available;
+
         List<SeatAvailabilityResponse.SeatDetailResponse> seatDetails = allSeats.stream()
                 .map(seat -> {
                     SeatAvailabilityResponse.SeatDetailResponse detail = new SeatAvailabilityResponse.SeatDetailResponse();
                     detail.setSeatId(seat.getId());
                     detail.setSeatNumber(seat.getSeatNumber());
                     detail.setSeatClass(seat.getSeatClass());
+                    detail.setSeatType(seat.getSeatType() != null ? seat.getSeatType() : "STANDARD");
                     detail.setRowNumber(seat.getRowNumber());
                     detail.setColumnLetter(seat.getColumnLetter());
-                    detail.setIsAvailable(availableSeatIds.contains(seat.getId()));
-                    detail.setIsActive(seat.getIsActive());
+                    detail.setPrice(seat.getPrice() != null ? seat.getPrice() : java.math.BigDecimal.ZERO);
+                    if (!seat.getIsActive()) {
+                        detail.setIsAvailable(false);
+                        detail.setStatus("BLOCKED");
+                    } else if (availableSeatIds.contains(seat.getId())) {
+                        detail.setIsAvailable(true);
+                        detail.setStatus("AVAILABLE");
+                    } else {
+                        detail.setIsAvailable(false);
+                        detail.setStatus("OCCUPIED");
+                    }
                     return detail;
                 })
                 .collect(Collectors.toList());
@@ -289,8 +303,11 @@ public class BookingService {
         response.setFlightNumber(flight.getFlightNumber());
         response.setAircraftId(flight.getAircraft().getId());
         response.setAircraftRegistrationNumber(flight.getAircraft().getRegistrationNumber());
-        response.setTotalSeats(allSeats.size());
-        response.setAvailableSeats(availableSeats.size());
+        response.setAircraftType(flight.getAircraft().getType());
+        response.setTotalSeats(totalSeats);
+        response.setAvailableSeats(available);
+        response.setBookedSeats(blocked);
+        response.setBlockedSeats(0);
         response.setSeats(seatDetails);
 
         return response;

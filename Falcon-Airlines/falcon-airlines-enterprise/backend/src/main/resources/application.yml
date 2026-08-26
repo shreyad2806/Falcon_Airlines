@@ -45,3 +45,14 @@ jwt:
   secret: ${JWT_SECRET:FalconAirlinesDefaultSecretKeyForJwtHmacAtLeast32Chars}
   access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:900}
   refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:604800}
+
+# Flight data provider configuration
+# Switch between: mock (database), aviationstack (live API)
+flight:
+  provider: ${FLIGHT_PROVIDER:mock}
+  aviationstack:
+    api-key: ${AVIATIONSTACK_API_KEY:}
+    base-url: ${AVIATIONSTACK_BASE_URL:https://api.aviationstack.com/v1}
+    connect-timeout: 5000
+    read-timeout: 10000
+    cache-ttl-seconds: 300

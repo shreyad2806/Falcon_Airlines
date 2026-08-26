@@ -13,6 +13,7 @@ import com.falcon.airlines.entity.User;
 import com.falcon.airlines.entity.Aircraft;
 import com.falcon.airlines.enums.BookingStatus;
 import com.falcon.airlines.enums.BookingPaymentStatus;
+
 import com.falcon.airlines.enums.FlightStatus;
 import com.falcon.airlines.enums.TicketStatus;
 import com.falcon.airlines.exception.BaseException;
@@ -104,7 +105,7 @@ class BookingTransactionIntegrationTest extends BaseIntegrationTest {
         assertThat(bookingOpt).isPresent();
         Booking booking = bookingOpt.get();
         assertThat(booking.getBookingReference()).isEqualTo(response.getBookingReference());
-        assertThat(booking.getStatus()).isEqualTo(BookingStatus.PENDING);
+        assertThat(booking.getStatus()).isEqualTo(BookingStatus.PENDING_PAYMENT);
         assertThat(booking.getCustomer().getId()).isEqualTo(customer.getId());
 
         // Verify tickets exist
@@ -237,7 +238,7 @@ class BookingTransactionIntegrationTest extends BaseIntegrationTest {
 
         // Verify initial state
         Booking booking = bookingRepository.findById(bookingId).orElseThrow();
-        assertThat(booking.getStatus()).isEqualTo(BookingStatus.PENDING);
+        assertThat(booking.getStatus()).isEqualTo(BookingStatus.PENDING_PAYMENT);
 
         List<Ticket> tickets = ticketRepository.findByBookingId(bookingId);
         assertThat(tickets).hasSize(1);
@@ -292,7 +293,7 @@ class BookingTransactionIntegrationTest extends BaseIntegrationTest {
 
         // Verify valid booking is still intact
         Booking validBooking = bookingRepository.findById(validBookingId).orElseThrow();
-        assertThat(validBooking.getStatus()).isEqualTo(BookingStatus.PENDING);
+        assertThat(validBooking.getStatus()).isEqualTo(BookingStatus.PENDING_PAYMENT);
 
         List<Ticket> tickets = ticketRepository.findByBookingId(validBookingId);
         assertThat(tickets).hasSize(1);

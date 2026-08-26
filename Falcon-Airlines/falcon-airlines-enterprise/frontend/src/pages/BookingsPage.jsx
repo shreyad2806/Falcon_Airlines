@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import * as bookingsApi from '../api/bookings';
 import * as passengersApi from '../api/passengers';
@@ -39,6 +39,7 @@ const tabStyle = (active) => ({
 
 export default function BookingsPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [tab, setTab] = useState('search');
   const [ref, setRef] = useState('');
   const [booking, setBooking] = useState(null);
@@ -56,6 +57,8 @@ export default function BookingsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [successBooking, setSuccessBooking] = useState(null);
   const [flightSearch, setFlightSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const FLIGHTS_PER_PAGE = 5;
 
   // Load data
   useEffect(() => {
@@ -128,9 +131,9 @@ export default function BookingsPage() {
         requestedSeats: selectedSeat ? [selectedSeat] : ['1A'],
       };
       const res = await bookingsApi.createBooking(data);
-      setSuccessBooking(res.data.data);
-      setTab('view');
-      setCreateStep(0);
+      const created = res.data.data;
+      // Navigate to payment page
+      navigate(`/payment?bookingId=${created.id}`);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to create booking');
     } finally {
@@ -160,6 +163,13 @@ export default function BookingsPage() {
            f.originAirportIataCode?.toLowerCase().includes(q) ||
            f.destinationAirportIataCode?.toLowerCase().includes(q);
   });
+
+  // Reset page when search changes
+  useEffect(() => { setCurrentPage(1); }, [flightSearch]);
+
+  const totalFlightPages = Math.ceil(filteredFlights.length / FLIGHTS_PER_PAGE);
+  const flightStartIndex = (currentPage - 1) * FLIGHTS_PER_PAGE;
+  const paginatedFlights = filteredFlights.slice(flightStartIndex, flightStartIndex + FLIGHTS_PER_PAGE);
 
   // Check if passenger step is valid
   const passengersValid = passengers.length > 0 && passengers.every(p => Object.keys(validatePassenger(p)).length === 0);
@@ -256,70 +266,136 @@ export default function BookingsPage() {
                 {filteredFlights.length === 0 ? (
                   <EmptyState icon="✈" heading="No flights available" text={flightSearch ? 'No flights match your search.' : 'No scheduled flights at the moment.'} />
                 ) : (
-                  <div style={{ display: 'grid', gap: spacing.md }}>
-                    {filteredFlights.map(f => {
-                      const past = isPastFlight(f);
-                      return (
-                        <div
-                          key={f.id}
-                          onClick={() => !past && setSelectedFlight(f)}
+                  <>
+                    <div style={{ display: 'grid', gap: spacing.sm, maxHeight: 520, overflowY: 'auto', paddingRight: 4 }} className="flight-list-scroll">
+                      {paginatedFlights.map(f => {
+                        const past = isPastFlight(f);
+                        return (
+                          <div
+                            key={f.id}
+                            onClick={() => !past && setSelectedFlight(f)}
+                            style={{
+                              padding: `${spacing.md}px ${spacing.lg}px`,
+                              border: `2px solid ${selectedFlight?.id === f.id ? colors.primary : colors.border}`,
+                              borderRadius: radius.md,
+                              cursor: past ? 'not-allowed' : 'pointer',
+                              display: 'grid',
+                              gridTemplateColumns: '80px 1fr auto',
+                              gap: spacing.lg,
+                              alignItems: 'center',
+                              opacity: past ? 0.5 : 1,
+                              transition: 'all 0.15s',
+                              background: selectedFlight?.id === f.id ? `${colors.primary}08` : colors.bgCard,
+                            }}
+                          >
+                            <div>
+                              <div style={{ fontSize: fonts.base, fontWeight: 700, color: colors.text }}>{f.flightNumber}</div>
+                              <StatusBadge status={f.status} size="sm" />
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: spacing.md }}>
+                              <div style={{ textAlign: 'center' }}>
+                                <div style={{ fontSize: fonts.base, fontWeight: 700 }}>{f.originAirportIataCode}</div>
+                                <div style={{ fontSize: fonts.xs, color: colors.textMuted, maxWidth: 80, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.originAirportName || ''}</div>
+                              </div>
+                              <div style={{ color: colors.textMuted }}><PlaneTakeoffIcon size={14} /></div>
+                              <div style={{ textAlign: 'center' }}>
+                                <div style={{ fontSize: fonts.base, fontWeight: 700 }}>{f.destinationAirportIataCode}</div>
+                                <div style={{ fontSize: fonts.xs, color: colors.textMuted, maxWidth: 80, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.destinationAirportName || ''}</div>
+                              </div>
+                              <div style={{ fontSize: fonts.sm, color: colors.textSecondary, textAlign: 'center', marginLeft: spacing.sm }}>
+                                <div>{formatTime(f.scheduledDeparture)}</div>
+                                <div style={{ fontSize: fonts.xs, color: colors.textMuted }}>{calculateDuration(f.scheduledDeparture, f.scheduledArrival)}</div>
+                              </div>
+                            </div>
+                            <div style={{ textAlign: 'right', minWidth: 90 }}>
+                              {past ? (
+                                <div style={{ fontSize: fonts.sm, color: colors.danger, fontWeight: 500 }}>Departed</div>
+                              ) : (
+                                <>
+                                  <div style={{ fontSize: fonts.sm, color: colors.textSecondary }}>{f.availableSeats ?? '—'} seats</div>
+                                  <div style={{ fontSize: fonts.base, fontWeight: 700, color: colors.success }}>
+                                    {f.basePrice ? formatINR(f.basePrice) : '—'}
+                                  </div>
+                                  <div style={{ fontSize: fonts.xs, color: colors.textMuted }}>per person</div>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Pagination controls */}
+                    {totalFlightPages > 1 && (
+                      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: spacing.sm, padding: `${spacing.md}px 0` }}>
+                        <button
+                          onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                          disabled={currentPage === 1}
                           style={{
-                            padding: spacing.lg,
-                            border: `2px solid ${selectedFlight?.id === f.id ? colors.primary : colors.border}`,
-                            borderRadius: radius.md,
-                            cursor: past ? 'not-allowed' : 'pointer',
-                            display: 'grid',
-                            gridTemplateColumns: '80px 1fr auto',
-                            gap: spacing.lg,
-                            alignItems: 'center',
-                            opacity: past ? 0.5 : 1,
-                            transition: 'border-color 0.15s',
+                            padding: '6px 12px',
+                            borderRadius: radius.sm,
+                            border: `1px solid ${colors.border}`,
+                            background: currentPage === 1 ? colors.bg : colors.bgCard,
+                            color: currentPage === 1 ? colors.textMuted : colors.text,
+                            cursor: currentPage === 1 ? 'default' : 'pointer',
+                            fontSize: fonts.sm,
+                            fontWeight: 500,
+                            fontFamily: 'inherit',
                           }}
                         >
-                          <div>
-                            <div style={{ fontSize: fonts.lg, fontWeight: 700, color: colors.text }}>{f.flightNumber}</div>
-                            <StatusBadge status={f.status} size="sm" />
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: spacing.lg }}>
-                            <div style={{ textAlign: 'center' }}>
-                              <div style={{ fontSize: fonts.xl, fontWeight: 700 }}>{f.originAirportIataCode}</div>
-                              <div style={{ fontSize: fonts.xs, color: colors.textMuted }}>{f.originAirportName || ''}</div>
-                            </div>
-                            <div style={{ color: colors.textMuted }}><PlaneTakeoffIcon size={16} /></div>
-                            <div style={{ textAlign: 'center' }}>
-                              <div style={{ fontSize: fonts.xl, fontWeight: 700 }}>{f.destinationAirportIataCode}</div>
-                              <div style={{ fontSize: fonts.xs, color: colors.textMuted }}>{f.destinationAirportName || ''}</div>
-                            </div>
-                            <div style={{ fontSize: fonts.sm, color: colors.textSecondary, textAlign: 'center' }}>
-                              <div>{formatTime(f.scheduledDeparture)}</div>
-                              <div style={{ color: colors.textMuted }}>{calculateDuration(f.scheduledDeparture, f.scheduledArrival)}</div>
-                            </div>
-                          </div>
-                          <div style={{ textAlign: 'right' }}>
-                            {past ? (
-                              <div style={{ fontSize: fonts.sm, color: colors.danger, fontWeight: 500 }}>Departed</div>
-                            ) : (
-                              <>
-                                <div style={{ fontSize: fonts.sm, color: colors.textSecondary }}>{f.availableSeats ?? '—'} seats</div>
-                                <div style={{ fontSize: fonts.xl, fontWeight: 700, color: colors.success }}>
-                                  {f.basePrice ? formatINR(f.basePrice) : '—'}
-                                </div>
-                                <div style={{ fontSize: fonts.xs, color: colors.textMuted }}>per person</div>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                          ← Prev
+                        </button>
+                        {Array.from({ length: totalFlightPages }, (_, i) => i + 1).map(page => (
+                          <button
+                            key={page}
+                            onClick={() => setCurrentPage(page)}
+                            style={{
+                              width: 32,
+                              height: 32,
+                              borderRadius: radius.sm,
+                              border: `1px solid ${page === currentPage ? colors.primary : colors.border}`,
+                              background: page === currentPage ? colors.primary : colors.bgCard,
+                              color: page === currentPage ? 'white' : colors.text,
+                              cursor: 'pointer',
+                              fontSize: fonts.sm,
+                              fontWeight: page === currentPage ? 700 : 500,
+                              fontFamily: 'inherit',
+                            }}
+                          >
+                            {page}
+                          </button>
+                        ))}
+                        <button
+                          onClick={() => setCurrentPage(p => Math.min(totalFlightPages, p + 1))}
+                          disabled={currentPage === totalFlightPages}
+                          style={{
+                            padding: '6px 12px',
+                            borderRadius: radius.sm,
+                            border: `1px solid ${colors.border}`,
+                            background: currentPage === totalFlightPages ? colors.bg : colors.bgCard,
+                            color: currentPage === totalFlightPages ? colors.textMuted : colors.text,
+                            cursor: currentPage === totalFlightPages ? 'default' : 'pointer',
+                            fontSize: fonts.sm,
+                            fontWeight: 500,
+                            fontFamily: 'inherit',
+                          }}
+                        >
+                          Next →
+                        </button>
+                      </div>
+                    )}
+                  </>
                 )}
 
                 {selectedFlight && !isPastFlight(selectedFlight) && (
-                  <div style={{ marginTop: spacing.lg, display: 'flex', justifyContent: 'flex-end' }}>
+                  <div style={{ marginTop: spacing.md, paddingTop: spacing.md, borderTop: `1px solid ${colors.borderLight}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: fonts.sm, color: colors.textSecondary }}>
+                      {filteredFlights.length} flight{filteredFlights.length !== 1 ? 's' : ''} found
+                    </span>
                     <button onClick={() => {
                       setPassengers(myPassenger ? [{ ...emptyPassengerObj(), firstName: myPassenger.firstName, lastName: myPassenger.lastName, email: myPassenger.email, _isMe: true }] : [emptyPassengerObj()]);
                       setCreateStep(1);
-                    }} style={buttons.primary}>
+                    }} style={{ ...buttons.primary, minWidth: 140, justifyContent: 'center' }}>
                       Continue →
                     </button>
                   </div>
@@ -387,7 +463,7 @@ export default function BookingsPage() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: spacing.xl }} className="booking-layout-grid">
               <div style={{ background: colors.bgCard, borderRadius: radius.lg, border: `1px solid ${colors.border}`, padding: spacing.xl }}>
                 <h3 style={{ fontSize: fonts.lg, fontWeight: 600, color: colors.text, marginBottom: spacing.lg }}>Select Your Seat</h3>
-                <SeatChart selectedSeat={selectedSeat} onSelectSeat={setSelectedSeat} />
+                <SeatChart selectedSeat={selectedSeat} onSelectSeat={setSelectedSeat} flightId={selectedFlight?.id} />
 
                 {/* Seat price info */}
                 {selectedSeat && (
@@ -481,7 +557,12 @@ export default function BookingsPage() {
       <style>{`
         @media (max-width: 900px) {
           .booking-layout-grid { grid-template-columns: 1fr !important; }
+          .flight-list-scroll { maxHeight: 400px !important; }
         }
+        .flight-list-scroll::-webkit-scrollbar { width: 6px; }
+        .flight-list-scroll::-webkit-scrollbar-track { background: transparent; }
+        .flight-list-scroll::-webkit-scrollbar-thumb { background: ${colors.border}; border-radius: 3px; }
+        .flight-list-scroll::-webkit-scrollbar-thumb:hover { background: ${colors.textMuted}; }
       `}</style>
     </div>
   );

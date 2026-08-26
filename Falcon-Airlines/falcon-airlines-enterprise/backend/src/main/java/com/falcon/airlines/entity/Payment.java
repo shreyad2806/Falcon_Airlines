@@ -1,8 +1,6 @@
 package com.falcon.airlines.entity;
 
 import com.falcon.airlines.common.AuditEntity;
-import com.falcon.airlines.enums.PaymentMethod;
-import com.falcon.airlines.enums.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -25,19 +23,17 @@ public class Payment extends AuditEntity {
     @Column(name = "transaction_id", length = 100, nullable = false, unique = true)
     private String transactionId;
 
-    @Column(name = "amount", precision = 15, scale = 2, nullable = false)
+    @Column(name = "amount", nullable = false, precision = 15, scale = 2)
     private BigDecimal amount;
 
     @Column(name = "currency", length = 3, nullable = false)
     private String currency;
 
-    @Enumerated(EnumType.STRING)
     @Column(name = "payment_method", length = 50, nullable = false)
-    private PaymentMethod paymentMethod;
+    private String paymentMethod;
 
-    @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 20, nullable = false)
-    private PaymentStatus status;
+    private String status;
 
     @Column(name = "gateway_reference", length = 255)
     private String gatewayReference;

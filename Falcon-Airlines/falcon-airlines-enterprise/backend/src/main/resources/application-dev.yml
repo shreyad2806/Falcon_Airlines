@@ -35,3 +35,6 @@ management:
   endpoint:
     health:
       show-details: always
+
+# Aviationstack config — API key comes from environment variable AVIATIONSTACK_API_KEY
+# See backend/.env.example for setup instructions

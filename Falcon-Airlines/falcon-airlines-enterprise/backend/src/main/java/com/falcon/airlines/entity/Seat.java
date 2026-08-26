@@ -31,4 +31,10 @@ public class Seat extends AuditEntity {
 
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
+
+    @Column(name = "price", precision = 10, scale = 2)
+    private java.math.BigDecimal price;
+
+    @Column(name = "seat_type", length = 20)
+    private String seatType;
 }

@@ -9,6 +9,8 @@ import FlightsPage from './pages/FlightsPage';
 import BookingsPage from './pages/BookingsPage';
 import TicketsPage from './pages/TicketsPage';
 import BoardingPassesPage from './pages/BoardingPassesPage';
+import PaymentPage from './pages/PaymentPage';
+import BookingConfirmationPage from './pages/BookingConfirmationPage';
 
 export default function App() {
   return (
@@ -23,6 +25,8 @@ export default function App() {
             <Route path="/bookings" element={<ProtectedRoute><BookingsPage /></ProtectedRoute>} />
             <Route path="/tickets" element={<ProtectedRoute><TicketsPage /></ProtectedRoute>} />
             <Route path="/boarding-passes" element={<ProtectedRoute><BoardingPassesPage /></ProtectedRoute>} />
+            <Route path="/payment" element={<ProtectedRoute><PaymentPage /></ProtectedRoute>} />
+            <Route path="/booking-confirmation" element={<ProtectedRoute><BookingConfirmationPage /></ProtectedRoute>} />
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Route>

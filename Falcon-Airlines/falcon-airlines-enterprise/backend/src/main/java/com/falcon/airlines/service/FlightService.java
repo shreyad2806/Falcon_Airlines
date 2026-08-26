@@ -145,7 +145,7 @@ public class FlightService {
             long allocated = seatAllocationRepository.countByFlightId(flight.getId());
             return Math.max(0, allSeats.size() - (int) allocated);
         } catch (Exception e) {
-            return 0;
+            return -1; // Return -1 to indicate "unknown" rather than misleading 0
         }
     }
 
