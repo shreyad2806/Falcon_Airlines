@@ -27,4 +27,6 @@ public interface SeatAllocationRepository extends JpaRepository<SeatAllocation, 
     boolean existsBySeatIdAndFlightId(Long seatId, Long flightId);
 
     boolean existsByTicketId(Long ticketId);
+
+    long countByFlightId(Long flightId);
 }

@@ -37,9 +37,9 @@ class DatabaseLayerIntegrationTest extends BaseIntegrationTest {
         assertThat(flightRepository.count()).isEqualTo(6);
         assertThat(userRepository.count()).isEqualTo(1);
         assertThat(roleRepository.count()).isEqualTo(3);
-        assertThat(permissionRepository.count()).isEqualTo(15);
+        assertThat(permissionRepository.count()).isEqualTo(17);
         assertThat(userRoleRepository.count()).isEqualTo(1);
-        assertThat(rolePermissionRepository.count()).isEqualTo(15);
+        assertThat(rolePermissionRepository.count()).isEqualTo(35);
     }
 
     @Test
@@ -69,7 +69,7 @@ class DatabaseLayerIntegrationTest extends BaseIntegrationTest {
         List<RolePermission> rolePermissions = rolePermissionRepository.findAll().stream()
                 .filter(rp -> rp.getRole().getId().equals(adminRole.getId()))
                 .toList();
-        assertThat(rolePermissions).hasSize(15);
+        assertThat(rolePermissions).hasSize(17);
         assertThat(rolePermissions.getFirst().getPermission().getCode()).isNotBlank();
     }
 

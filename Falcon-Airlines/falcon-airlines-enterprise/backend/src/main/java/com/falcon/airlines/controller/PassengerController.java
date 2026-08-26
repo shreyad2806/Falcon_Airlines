@@ -3,6 +3,7 @@ package com.falcon.airlines.controller;
 import com.falcon.airlines.dto.request.PassengerRequest;
 import com.falcon.airlines.dto.response.PassengerResponse;
 import com.falcon.airlines.response.ApiResponse;
+import com.falcon.airlines.security.principal.UserPrincipal;
 import com.falcon.airlines.service.PassengerService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -13,6 +14,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -27,6 +29,16 @@ public class PassengerController {
 
     public PassengerController(PassengerService passengerService) {
         this.passengerService = passengerService;
+    }
+
+    @Operation(summary = "Get current user's passenger profile (auto-creates if needed)")
+    @SecurityRequirement(name = "bearerAuth")
+    @GetMapping("/me")
+    @PreAuthorize("hasAnyAuthority('PASSENGER_READ')")
+    public ResponseEntity<ApiResponse<PassengerResponse>> getMyPassenger(
+            @AuthenticationPrincipal UserPrincipal principal) {
+        PassengerResponse response = passengerService.getOrCreatePassengerForUser(principal.getId());
+        return ResponseEntity.ok(ApiResponse.ok("Passenger retrieved successfully", response));
     }
 
     @Operation(summary = "List and search passengers")

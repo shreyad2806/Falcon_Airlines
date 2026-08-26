@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -125,6 +126,34 @@ public class PassengerService {
                                                      Pageable pageable) {
         Specification<Passenger> spec = buildSpecification(firstName, lastName, email, passportNumber, userId, fullName);
         return passengerRepository.findAll(spec, pageable).map(passengerMapper::toResponse);
+    }
+
+    /**
+     * Get or auto-create a Passenger record for the authenticated user.
+     * When a customer registers, only a User record is created. This method
+     * ensures a Passenger record exists so they can book flights.
+     */
+    public PassengerResponse getOrCreatePassengerForUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BaseException("User not found", HttpStatus.NOT_FOUND, "USER_NOT_FOUND"));
+
+        Optional<Passenger> existing = passengerRepository.findByUser_Id(userId);
+        if (existing.isPresent()) {
+            return passengerMapper.toResponse(existing.get());
+        }
+
+        // Auto-create a passenger from user data
+        Passenger passenger = new Passenger();
+        passenger.setUser(user);
+        // Use username as first name if no better data available
+        passenger.setFirstName(user.getUsername());
+        passenger.setLastName(" ");
+        passenger.setEmail(user.getEmail());
+        passenger.setDateOfBirth(LocalDate.of(1990, 1, 1)); // placeholder DOB
+        passenger.setGender(com.falcon.airlines.enums.Gender.M);
+
+        Passenger saved = passengerRepository.save(passenger);
+        return passengerMapper.toResponse(saved);
     }
 
     @Transactional(readOnly = true)

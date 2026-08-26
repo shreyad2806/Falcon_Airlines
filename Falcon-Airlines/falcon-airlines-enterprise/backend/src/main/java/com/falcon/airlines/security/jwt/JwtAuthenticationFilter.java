@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 /**
@@ -66,12 +67,30 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     userDetails.getAuthorities());
                     authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authentication);
+                } else {
+                    // Token is present but invalid/expired — return 401 so the
+                    // client interceptor can attempt a refresh before the request
+                    // silently falls through to Spring Security's 403.
+                    log.warn("Expired/invalid JWT for path {}", request.getRequestURI());
+                    writeUnauthorized(response, "Token expired or invalid");
+                    return;
                 }
             }
         } catch (JwtException | IllegalArgumentException ex) {
             log.warn("Invalid JWT token for path {}: {}", request.getRequestURI(), ex.getMessage());
+            writeUnauthorized(response, "Invalid token");
+            return;
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private void writeUnauthorized(HttpServletResponse response, String message) throws IOException {
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        String body = "{\"success\":false,\"status\":401,\"error\":\"AUTHENTICATION_ERROR\",\"message\":\"" + message.replace("\"", "\\\"") + "\"}";
+        response.getOutputStream().write(body.getBytes(StandardCharsets.UTF_8));
+        response.getOutputStream().flush();
     }
 }

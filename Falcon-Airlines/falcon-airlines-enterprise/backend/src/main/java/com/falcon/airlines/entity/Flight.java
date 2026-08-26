@@ -49,4 +49,10 @@ public class Flight extends AuditEntity {
 
     @Column(name = "is_active", nullable = false)
     private Boolean isActive;
+
+    @Column(name = "base_price", precision = 12, scale = 2)
+    private java.math.BigDecimal basePrice;
+
+    @Column(name = "currency", length = 3)
+    private String currency;
 }

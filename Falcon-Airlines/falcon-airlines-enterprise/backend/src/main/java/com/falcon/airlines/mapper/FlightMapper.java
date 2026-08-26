@@ -17,9 +17,12 @@ public interface FlightMapper {
 
     @Mapping(target = "originAirportId", source = "originAirport.id")
     @Mapping(target = "originAirportIataCode", source = "originAirport.iataCode")
+    @Mapping(target = "originAirportName", source = "originAirport.name")
     @Mapping(target = "destinationAirportId", source = "destinationAirport.id")
     @Mapping(target = "destinationAirportIataCode", source = "destinationAirport.iataCode")
+    @Mapping(target = "destinationAirportName", source = "destinationAirport.name")
     @Mapping(target = "aircraftId", source = "aircraft.id")
     @Mapping(target = "aircraftRegistrationNumber", source = "aircraft.registrationNumber")
+    @Mapping(target = "availableSeats", ignore = true)
     FlightResponse toResponse(Flight entity);
 }

@@ -22,8 +22,9 @@ client.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // Try refresh on 401 (but not on refresh itself)
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Try refresh on 401 or 403 (but not on refresh itself)
+    const status = error.response?.status;
+    if ((status === 401 || status === 403) && !originalRequest._retry) {
       originalRequest._retry = true;
       const refreshToken = localStorage.getItem('refreshToken');
       if (refreshToken) {

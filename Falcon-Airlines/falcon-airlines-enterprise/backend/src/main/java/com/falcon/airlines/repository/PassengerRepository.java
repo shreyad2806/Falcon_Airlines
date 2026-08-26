@@ -17,4 +17,6 @@ public interface PassengerRepository extends JpaRepository<Passenger, Long>, Jpa
     Optional<Passenger> findByEmailAndIdNot(String email, Long id);
 
     boolean existsByUserId(Long userId);
+
+    Optional<Passenger> findByUser_Id(Long userId);
 }

@@ -5,12 +5,15 @@ import com.falcon.airlines.dto.response.FlightResponse;
 import com.falcon.airlines.entity.Aircraft;
 import com.falcon.airlines.entity.Airport;
 import com.falcon.airlines.entity.Flight;
+import com.falcon.airlines.entity.Seat;
 import com.falcon.airlines.enums.FlightStatus;
 import com.falcon.airlines.exception.BaseException;
 import com.falcon.airlines.mapper.FlightMapper;
 import com.falcon.airlines.repository.AircraftRepository;
 import com.falcon.airlines.repository.AirportRepository;
 import com.falcon.airlines.repository.FlightRepository;
+import com.falcon.airlines.repository.SeatAllocationRepository;
+import com.falcon.airlines.repository.SeatRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -32,15 +35,21 @@ public class FlightService {
     private final FlightRepository flightRepository;
     private final AirportRepository airportRepository;
     private final AircraftRepository aircraftRepository;
+    private final SeatRepository seatRepository;
+    private final SeatAllocationRepository seatAllocationRepository;
     private final FlightMapper flightMapper;
 
     public FlightService(FlightRepository flightRepository,
                          AirportRepository airportRepository,
                          AircraftRepository aircraftRepository,
+                         SeatRepository seatRepository,
+                         SeatAllocationRepository seatAllocationRepository,
                          FlightMapper flightMapper) {
         this.flightRepository = flightRepository;
         this.airportRepository = airportRepository;
         this.aircraftRepository = aircraftRepository;
+        this.seatRepository = seatRepository;
+        this.seatAllocationRepository = seatAllocationRepository;
         this.flightMapper = flightMapper;
     }
 
@@ -69,7 +78,9 @@ public class FlightService {
     public FlightResponse getFlightById(Long id) {
         Flight flight = flightRepository.findById(id)
                 .orElseThrow(() -> new BaseException("Flight not found", HttpStatus.NOT_FOUND, "FLIGHT_NOT_FOUND"));
-        return flightMapper.toResponse(flight);
+        FlightResponse response = flightMapper.toResponse(flight);
+        response.setAvailableSeats(calculateAvailableSeats(flight));
+        return response;
     }
 
     public FlightResponse updateFlight(Long id, FlightRequest request) {
@@ -121,7 +132,21 @@ public class FlightService {
                                               Pageable pageable) {
         Specification<Flight> spec = buildSpecification(flightNumber, originAirport, destinationAirport,
                 aircraft, status, departureFrom, departureTo, active);
-        return flightRepository.findAll(spec, pageable).map(flightMapper::toResponse);
+        return flightRepository.findAll(spec, pageable).map(flight -> {
+            FlightResponse response = flightMapper.toResponse(flight);
+            response.setAvailableSeats(calculateAvailableSeats(flight));
+            return response;
+        });
+    }
+
+    private int calculateAvailableSeats(Flight flight) {
+        try {
+            List<Seat> allSeats = seatRepository.findByAircraftIdAndIsActiveTrue(flight.getAircraft().getId());
+            long allocated = seatAllocationRepository.countByFlightId(flight.getId());
+            return Math.max(0, allSeats.size() - (int) allocated);
+        } catch (Exception e) {
+            return 0;
+        }
     }
 
     private void validateFlightSchedule(FlightRequest request) {

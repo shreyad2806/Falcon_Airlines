@@ -105,10 +105,8 @@ public class BookingService {
         booking.setBookingDate(Instant.now());
         booking.setPaymentStatus(BookingPaymentStatus.PENDING);
         booking.setBookingReference(generateBookingReference());
-
-        BigDecimal totalAmount = calculateTotalAmount(seats);
-        booking.setTotalAmount(totalAmount);
-        booking.setCurrency("USD");
+        booking.setCurrency("INR");
+        booking.setTotalAmount(calculateTotalAmountInINR(seats, flight));
 
         Booking savedBooking = bookingRepository.save(booking);
 
@@ -367,7 +365,7 @@ public class BookingService {
         }
 
         if (flight.getScheduledDeparture().isBefore(Instant.now())) {
-            throw new BaseException("Cannot book past flights", HttpStatus.BAD_REQUEST, "FLIGHT_IN_PAST");
+            throw new BaseException("This flight has already departed. Please choose another flight.", HttpStatus.BAD_REQUEST, "FLIGHT_IN_PAST");
         }
     }
 
@@ -411,10 +409,12 @@ public class BookingService {
         return "TKT" + System.currentTimeMillis() + (int)(Math.random() * 10000);
     }
 
-    private BigDecimal calculateTotalAmount(List<Seat> seats) {
-        return seats.stream()
-                .map(this::calculateSeatFare)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    private BigDecimal calculateTotalAmountInINR(List<Seat> seats, Flight flight) {
+        BigDecimal basePrice = flight.getBasePrice() != null ? flight.getBasePrice() : BigDecimal.valueOf(35000);
+        int passengerCount = seats.size();
+        BigDecimal totalFare = basePrice.multiply(BigDecimal.valueOf(passengerCount));
+        BigDecimal taxes = totalFare.multiply(BigDecimal.valueOf(0.12)); // 12% GST
+        return totalFare.add(taxes);
     }
 
     private BigDecimal calculateSeatFare(Seat seat) {
